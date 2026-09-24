@@ -1,0 +1,22 @@
+# Node / Angular
+/node_modules/
+/frontend/dist/
+/frontend/.angular/
+
+# Python / Django
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+db.sqlite3
+*.log
+.env
+.env.*
+*.sql
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
