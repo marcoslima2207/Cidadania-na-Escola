@@ -404,7 +404,7 @@ export class HomeComponent {
 
   posts: Post[] = [
     {
-      image: '/posts/Gemini_Generated_Image_kunbw2kunbw2kunb.jfif',
+      image: 'posts/Gemini_Generated_Image_kunbw2kunbw2kunb.jfif',
       title: 'Qual dever da Justiça?',
       subtitle: 'Justiça',
       theme: 'justice',
@@ -412,7 +412,7 @@ export class HomeComponent {
       description: 'Uma sociedade livre e aquela em que as pessoas podem gerar ações e seus direitos e deveres.'
     },
     {
-      image: '/posts/Gemini_Generated_Image_uzx9pwuzx9pwuzx9.jfif',
+      image: 'posts/Gemini_Generated_Image_uzx9pwuzx9pwuzx9.jfif',
       title: 'Educação',
       subtitle: 'Educação',
       theme: 'education',
@@ -420,7 +420,7 @@ export class HomeComponent {
       description: 'A educação é um direito essencial para formar cidadãos críticos, conscientes e participantes da democracia.'
     },
     {
-      image: '/posts/Gemini_Generated_Image_ve8p74ve8p74ve8p.jfif',
+      image: 'posts/Gemini_Generated_Image_ve8p74ve8p74ve8p.jfif',
       title: 'Fake News',
       subtitle: 'Checagem',
       theme: 'fake-news',
