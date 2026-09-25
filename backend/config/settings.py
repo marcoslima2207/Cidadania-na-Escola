@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # ============================================================
@@ -30,19 +30,14 @@ ALLOWED_HOSTS = []
 # ============================================================
 
 INSTALLED_APPS = [
-    # Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
-    # Terceiros
     'rest_framework',
     'corsheaders',
-
-    # Aplicações do projeto
     'api',
 ]
 
@@ -53,10 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # Permite comunicação entre Angular e Django
     'corsheaders.middleware.CorsMiddleware',
-
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -65,10 +57,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
-# ============================================================
-# CONFIGURAÇÕES PRINCIPAIS
-# ============================================================
 
 ROOT_URLCONF = 'config.urls'
 
@@ -93,76 +81,45 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # ============================================================
-# BANCO DE DADOS - POSTGRESQL
+# BANCO DE DADOS
 # ============================================================
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'cidadania_escola'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+# Usa SQLite por padrão para rodar localmente sem PostgreSQL, mas mantém
+# suporte ao PostgreSQL em produção quando as variáveis forem configuradas.
+if os.getenv('DB_ENGINE') == 'postgresql':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME', 'cidadania_escola'),
+            'USER': os.getenv('DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-
-# ============================================================
-# VALIDAÇÃO DE SENHAS
-# ============================================================
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'UserAttributeSimilarityValidator'
-        ),
-    },
-    {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'MinimumLengthValidator'
-        ),
-    },
-    {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'CommonPasswordValidator'
-        ),
-    },
-    {
-        'NAME': (
-            'django.contrib.auth.password_validation.'
-            'NumericPasswordValidator'
-        ),
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 
-# ============================================================
-# INTERNACIONALIZAÇÃO
-# ============================================================
-
 LANGUAGE_CODE = 'pt-br'
-
 TIME_ZONE = 'America/Sao_Paulo'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# ============================================================
-# ARQUIVOS ESTÁTICOS
-# ============================================================
-
 STATIC_URL = 'static/'
-
-
-# ============================================================
-# DJANGO REST FRAMEWORK
-# ============================================================
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -170,29 +127,11 @@ REST_FRAMEWORK = {
     ],
 }
 
-
-# ============================================================
-# CORS
-# ============================================================
-
-# Permite que o Angular, executado na porta 4200,
-# faça requisições para o Django.
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
+    'http://127.0.0.1:4200',
 ]
 
-
-# ============================================================
-# E-MAIL
-# ============================================================
-
-EMAIL_BACKEND = (
-    'django.core.mail.backends.console.EmailBackend'
-)
-
-
-# ============================================================
-# CHAVE PRIMÁRIA PADRÃO
-# ============================================================
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
