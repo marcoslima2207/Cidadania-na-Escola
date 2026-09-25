@@ -27,7 +27,7 @@ interface Post {
         </button>
 
         <div class="posts-viewport">
-          <div class="posts-track" [style.transform]="'translateX(-' + currentIndex * 33.333 + '%)'">
+          <div class="posts-track" [style.--slide-index]="currentIndex">
             <article class="post-card" *ngFor="let post of posts" [ngClass]="'post-card--' + post.theme">
               <img class="post-card__image" [src]="post.image" [alt]="post.title" />
               <div class="post-card__graphic" aria-hidden="true">
@@ -127,6 +127,7 @@ interface Post {
       transition: transform 0.45s ease;
       width: max-content;
       padding-bottom: 0.4rem;
+      transform: translateX(calc(var(--slide-index) * -33.333%));
     }
     .post-card {
       position: relative;
@@ -379,23 +380,50 @@ interface Post {
     .topic-card--neutral { background: #f4f4f4; }
     @media (max-width: 860px) {
       .posts-section {
-        padding: 1.5rem 1rem 0;
+        padding: 1.25rem 0.85rem 0;
       }
       .posts-carousel {
-        grid-template-columns: 1fr;
+        grid-template-columns: 42px minmax(0, 1fr) 42px;
+        gap: 0.35rem;
       }
       .carousel-button {
-        display: none;
+        display: inline-flex;
+        width: 38px;
+        height: 38px;
+        font-size: 1.6rem;
+      }
+      .posts-track {
+        gap: 0;
+        width: 100%;
+        transform: translateX(calc(var(--slide-index) * -100%));
       }
       .post-card {
-        width: min(86vw, 320px);
+        width: 100%;
+        min-height: 390px;
+        border-radius: 18px;
       }
+      .posts-title { margin-bottom: 1rem; font-size: 2.5rem; }
       .hero {
         grid-template-columns: 1fr;
+        margin: 1.1rem 0.85rem 1.5rem;
+        padding: 2rem 1.2rem 1rem;
+        border-radius: 22px;
+        gap: 1rem;
       }
+      h1 { font-size: clamp(2.45rem, 12vw, 3.6rem); }
+      .lead { font-size: 1rem; line-height: 1.55; }
+      .hero__actions { gap: 0.7rem; }
+      .btn { flex: 1 1 100%; padding: 0.8rem 1rem; }
+      .hero__visual { min-height: 210px; gap: 0.55rem; }
+      .visual-card--blue { width: 105px; height: 150px; }
+      .visual-card--green { width: 86px; height: 125px; margin-bottom: 18px; }
+      .visual-card--light { width: 72px; height: 105px; margin-bottom: 30px; }
       .topics {
         grid-template-columns: 1fr;
+        padding: 0 0.85rem;
+        gap: 0.85rem;
       }
+      .topic-card { min-height: auto; padding: 1.2rem; }
     }
   `]
 })

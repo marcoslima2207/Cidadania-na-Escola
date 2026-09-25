@@ -20,7 +20,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </div>
       </div>
 
-      <nav class="nav" aria-label="Menu principal">
+      <button class="menu-toggle" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen" aria-controls="main-navigation">
+        <span aria-hidden="true">☰</span>
+        <span>Menu</span>
+      </button>
+
+      <nav id="main-navigation" class="nav" [class.nav--open]="menuOpen" aria-label="Menu principal">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
         <a routerLink="/democracia" routerLinkActive="active">Democracia</a>
         <a routerLink="/desinformacao" routerLinkActive="active">Desinformação</a>
@@ -76,6 +81,17 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       gap: 0.7rem 1rem;
       justify-content: center;
     }
+    .menu-toggle {
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      border: 1px solid #cbd9e8;
+      border-radius: 999px;
+      padding: 0.65rem 0.9rem;
+      background: #fff;
+      color: #173a6d;
+      font-weight: 800;
+    }
     .nav a {
       text-decoration: none;
       color: #173a6d;
@@ -89,10 +105,25 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       background: #eaf3ff;
     }
     @media (max-width: 700px) {
-      .site-header { justify-content: center; }
-      .nav { width: 100%; }
-      .nav a { flex: 1 1 calc(50% - 1rem); text-align: center; }
+      .site-header {
+        padding: 0.9rem 1rem;
+        justify-content: space-between;
+      }
+      .brand__mark { width: 52px; height: 36px; }
+      .mark { width: 18px; height: 29px; }
+      .mark--green { left: 16px; }
+      .brand__text { font-size: 0.78rem; }
+      .menu-toggle { display: inline-flex; }
+      .nav {
+        display: none;
+        width: 100%;
+        padding-top: 0.5rem;
+      }
+      .nav.nav--open { display: grid; grid-template-columns: 1fr 1fr; }
+      .nav a { text-align: center; padding: 0.65rem 0.45rem; font-size: 0.9rem; }
     }
   `]
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  menuOpen = false;
+}
