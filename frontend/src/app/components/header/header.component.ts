@@ -46,16 +46,19 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       margin: 0 auto;
       padding: 1.2rem 2rem 1.6rem;
       flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.2);
     }
     .brand {
       display: inline-flex;
       align-items: center;
       gap: 0.9rem;
+      min-width: 210px;
     }
     .brand__mark {
       position: relative;
       width: 72px;
       height: 48px;
+      filter: drop-shadow(0 6px 10px rgba(12, 45, 108, 0.14));
     }
     .mark {
       position: absolute;
@@ -64,16 +67,17 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       height: 38px;
       border-radius: 10px 10px 0 0;
     }
-    .mark--yellow { left: 0; background: linear-gradient(180deg, #f4e36b, #dfb329); transform: skewX(-18deg); }
+    .mark--yellow { left: 0; background: linear-gradient(180deg, #f4e36b, #dfb329); transform: skewX(-16deg); }
     .mark--green { left: 22px; background: linear-gradient(180deg, #40d06e, #1ca953); }
-    .mark--blue { right: 0; background: linear-gradient(180deg, #2d68ff, #123e99); transform: skewX(18deg); }
+    .mark--blue { right: 0; background: linear-gradient(180deg, #2d68ff, #123e99); transform: skewX(16deg); }
     .brand__text {
       display: flex;
       flex-direction: column;
       color: #0d2d6b;
       font-weight: 900;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.04em;
       line-height: 0.9;
+      font-size: 1.05rem;
     }
     .nav {
       display: flex;
@@ -91,18 +95,20 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       background: #fff;
       color: #173a6d;
       font-weight: 800;
+      box-shadow: 0 10px 20px rgba(17, 51, 94, 0.06);
     }
     .nav a {
       text-decoration: none;
       color: #173a6d;
       font-weight: 700;
-      padding: 0.5rem 0.8rem;
+      padding: 0.55rem 0.8rem;
       border-radius: 999px;
-      transition: background 0.2s ease;
+      transition: background 0.2s ease, transform 0.2s ease;
     }
     .nav a.active,
     .nav a:hover {
       background: #eaf3ff;
+      transform: translateY(-1px);
     }
     @media (max-width: 700px) {
       .site-header {

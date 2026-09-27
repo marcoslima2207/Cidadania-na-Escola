@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap');
+
 :root {
-  --bg-page: #e7e3de;
+  --bg-page: #eef2ef;
   --panel-bg: #f4f1ee;
   --deep-blue: #0a2d6c;
   --blue-strong: #0a47c9;
@@ -19,7 +21,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Open Sans', 'Segoe UI', sans-serif;
   background: var(--bg-page);
   color: var(--dark-text);
 }
@@ -43,4 +45,11 @@ select {
 app-root {
   display: block;
   min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+.brand__text {
+  font-family: 'Montserrat', 'Segoe UI', sans-serif;
 }

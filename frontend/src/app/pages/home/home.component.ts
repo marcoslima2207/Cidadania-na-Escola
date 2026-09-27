@@ -30,11 +30,7 @@ interface Post {
           <div class="posts-track" [style.--slide-index]="currentIndex">
             <article class="post-card" *ngFor="let post of posts" [ngClass]="'post-card--' + post.theme">
               <img class="post-card__image" [src]="post.image" [alt]="post.title" />
-              <div class="post-card__graphic" aria-hidden="true">
-                <span class="mark mark--one"></span>
-                <span class="mark mark--two"></span>
-                <span class="mark mark--three"></span>
-              </div>
+              <div class="post-card__overlay"></div>
 
               <div class="post-card__content">
                 <h3>{{ post.title }}</h3>
@@ -138,12 +134,12 @@ interface Post {
       box-shadow: 0 18px 36px rgba(11, 53, 92, 0.12);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-end;
       color: #fff;
-      background: linear-gradient(180deg, rgba(9, 34, 76, 0.6), rgba(9, 34, 76, 0.2));
       padding: 0;
       border: 0;
       flex-shrink: 0;
+      isolation: isolate;
     }
     .post-card__image {
       position: absolute;
@@ -153,43 +149,22 @@ interface Post {
       object-fit: cover;
       z-index: 0;
     }
-    .post-card__graphic {
-      display: none;
-    }
-    .mark {
+    .post-card__overlay {
       position: absolute;
-      display: block;
-      border-radius: 50%;
-      background: rgba(255, 214, 0, 0.9);
-      box-shadow: 0 0 0 10px rgba(255, 214, 0, 0.12);
-    }
-    .mark--one {
-      width: 72%;
-      height: 72%;
-      top: 8%;
-      left: 14%;
-      opacity: 0.7;
-    }
-    .mark--two {
-      width: 56%;
-      height: 56%;
-      top: 34%;
-      left: 22%;
-      opacity: 0.82;
-    }
-    .mark--three {
-      width: 22%;
-      height: 22%;
-      top: 42%;
-      left: 39%;
-      opacity: 0.9;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(4, 23, 44, 0.12), rgba(4, 23, 44, 0.78));
+      z-index: 1;
     }
     .post-card__content,
     .post-card__footer {
-      display: none;
+      position: relative;
+      z-index: 2;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
     }
     .post-card__content {
       padding-top: 1.2rem;
+      padding-bottom: 0.4rem;
     }
     .post-card h3 {
       margin: 0;
@@ -202,7 +177,8 @@ interface Post {
     }
     .post-card__badge {
       display: inline-block;
-      margin-top: 1rem;
+      margin-top: 0.9rem;
+      margin-bottom: 0.8rem;
       font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -213,29 +189,20 @@ interface Post {
       padding: 0.5rem 0.8rem;
     }
     .post-card p {
-      margin: 1rem 0 0;
-      line-height: 1.5;
+      margin: 0;
+      line-height: 1.45;
       font-size: 1rem;
       max-width: 240px;
       color: rgba(255, 255, 255, 0.92);
     }
     .post-card__footer {
       padding-bottom: 1.2rem;
-      padding-top: 0.8rem;
+      padding-top: 0.5rem;
       font-size: 0.7rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: rgba(255,255,255,0.9);
       font-weight: 700;
-    }
-    .post-card--justice {
-      background: linear-gradient(180deg, rgba(17, 87, 172, 0.84), rgba(17, 87, 172, 0.95));
-    }
-    .post-card--education {
-      background: linear-gradient(180deg, rgba(12, 145, 73, 0.78), rgba(9, 93, 65, 0.96));
-    }
-    .post-card--fake-news {
-      background: linear-gradient(180deg, rgba(17, 87, 172, 0.92), rgba(4, 64, 116, 0.96));
     }
     .carousel-button {
       width: 52px;
@@ -262,6 +229,7 @@ interface Post {
       margin-left: 0.25rem;
     }
     .hero {
+      position: relative;
       display: grid;
       grid-template-columns: 1.3fr 1fr;
       gap: 2rem;
@@ -271,6 +239,38 @@ interface Post {
       border-radius: 28px;
       margin: 1.5rem auto 2rem;
       max-width: 1200px;
+      overflow: hidden;
+      box-shadow: 0 22px 50px rgba(12, 49, 92, 0.08);
+    }
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hero::before {
+      width: 350px;
+      height: 350px;
+      right: -120px;
+      top: -100px;
+      background: rgba(23, 123, 235, 0.12);
+    }
+    .hero::after {
+      width: 260px;
+      height: 260px;
+      left: -88px;
+      bottom: -90px;
+      background: rgba(44, 174, 95, 0.11);
+    }
+    .hero__content,
+    .hero__visual {
+      position: relative;
+      z-index: 1;
+    }
+    .hero__content {
+      max-width: 630px;
     }
     .eyebrow {
       margin: 0 0 1rem;
@@ -308,10 +308,11 @@ interface Post {
       border-radius: 999px;
       text-decoration: none;
       font-weight: 700;
-      transition: transform 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .btn:hover {
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px rgba(13, 45, 107, 0.15);
     }
     .btn-primary {
       background: #153e79;
@@ -333,23 +334,27 @@ interface Post {
     .visual-card {
       border-radius: 24px;
       box-shadow: 0 25px 50px rgba(12, 36, 81, 0.15);
+      border: 2px solid rgba(255,255,255,0.35);
     }
     .visual-card--blue {
       width: 170px;
       height: 210px;
       background: linear-gradient(180deg, #0b3d9a 0%, #114aa0 100%);
+      transform: rotate(-10deg);
     }
     .visual-card--green {
       width: 130px;
       height: 180px;
       background: linear-gradient(180deg, #2fb165 0%, #1f8f4e 100%);
       margin-bottom: 26px;
+      transform: rotate(12deg);
     }
     .visual-card--light {
       width: 110px;
       height: 150px;
       background: linear-gradient(180deg, #edf5f2 0%, #dfeff2 100%);
       margin-bottom: 48px;
+      transform: rotate(-6deg);
     }
     .topics {
       max-width: 1200px;
@@ -363,6 +368,12 @@ interface Post {
       padding: 1.5rem;
       border-radius: 22px;
       min-height: 200px;
+      border: 1px solid rgba(13, 45, 107, 0.06);
+      box-shadow: 0 18px 35px rgba(15, 38, 68, 0.04);
+      transition: transform 0.2s ease;
+    }
+    .topic-card:hover {
+      transform: translateY(-3px);
     }
     .topic-card h2 {
       margin: 0 0 0.8rem;

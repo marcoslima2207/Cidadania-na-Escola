@@ -22,7 +22,14 @@ interface Question {
 
       @if (!finished) {
         <div class="question-card">
-          <p class="question-index">Pergunta {{ currentIndex + 1 }} de {{ questions.length }}</p>
+          <div class="progress">
+            <span>{{ currentIndex + 1 }} / {{ questions.length }}</span>
+            <div class="progress__bar">
+              <span [style.width.%]="((currentIndex + 1) / questions.length) * 100"></span>
+            </div>
+          </div>
+
+          <p class="question-index">Pergunta {{ currentIndex + 1 }}</p>
           <h2>{{ currentQuestion.question }}</h2>
 
           <div class="options">
@@ -61,27 +68,105 @@ interface Question {
   `,
   styles: [`
     :host { display: block; }
-    .quiz { max-width: 900px; margin: 2rem auto; padding: 0 2rem 3rem; }
-    .eyebrow { text-transform: uppercase; letter-spacing: .12em; color: #1b7a43; font-weight: 800; }
-    h1 { margin: .4rem 0 1.5rem; font-size: clamp(2rem, 4vw, 3.5rem); color: #0d2d6b; }
-    .question-card, .result-card {
-      background: #f7f8fb; border: 1px solid #dfe6f1; border-radius: 22px; padding: 2rem;
+    .quiz {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 2rem 3rem;
     }
-    .question-index { color: #0d2d6b; font-weight: 700; margin: 0 0 1rem; }
+    .quiz__header {
+      background: linear-gradient(135deg, #edf7ff 0%, #edf9f1 100%);
+      border-radius: 28px;
+      padding: 2rem 2rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 16px 35px rgba(12, 49, 92, 0.06);
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: #1b7a43;
+      font-weight: 800;
+      margin: 0 0 0.8rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 3.8rem);
+      color: #0d2d6b;
+    }
+    .question-card, .result-card {
+      background: #f7f8fb;
+      border: 1px solid #dfe6f1;
+      border-radius: 24px;
+      padding: 2rem;
+      box-shadow: 0 18px 34px rgba(11, 33, 63, 0.05);
+    }
+    .progress {
+      margin-bottom: 1.25rem;
+      color: #173a6d;
+      font-weight: 700;
+    }
+    .progress__bar {
+      width: 100%;
+      height: 10px;
+      background: #e6edf9;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 0.75rem;
+    }
+    .progress__bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #0d2d6b, #2cae5f);
+    }
+    .question-index {
+      color: #0d2d6b;
+      font-weight: 700;
+      margin: 0 0 1rem;
+    }
     .question-card h2 { margin: 0 0 1.5rem; color: #102748; }
     .options { display: grid; gap: 1rem; }
     .option {
-      display: flex; align-items: center; gap: 0.8rem; padding: 0.9rem 1rem; background: #fff; border-radius: 14px; border: 1px solid #dfe6f1; cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.95rem 1rem;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #dfe6f1;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+    }
+    .option:hover {
+      border-color: #8bb5ff;
+      transform: translateY(-1px);
     }
     .option input { accent-color: #153e79; }
     .actions { margin-top: 1.5rem; }
     .btn {
-      border: none; border-radius: 999px; padding: 0.85rem 1.4rem; font-weight: 700; cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      padding: 0.85rem 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
     }
-    .btn-primary { background: #153e79; color: white; }
+    .btn-primary {
+      background: #153e79;
+      color: white;
+      box-shadow: 0 12px 22px rgba(21, 62, 121, 0.18);
+    }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .score { font-size: 1.2rem; font-weight: 700; color: #0d2d6b; }
+    .score {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0d2d6b;
+      margin-bottom: 0.75rem;
+    }
     .message { line-height: 1.7; color: #2f3d4f; }
+    @media (max-width: 640px) {
+      .quiz { padding: 0 1rem 3rem; }
+      .quiz__header, .question-card, .result-card { padding: 1.3rem 1rem; }
+      .option { padding: 0.85rem 0.75rem; }
+    }
   `]
 })
 export class QuizComponent {
@@ -165,6 +250,46 @@ export class QuizComponent {
         { value: 'c', label: 'Compartilhar rapidamente para ser a primeira pessoa' }
       ],
       correct: 'b'
+    },
+    {
+      id: 9,
+      question: 'O que torna uma pessoa mais preparada para debater ideias públicas?',
+      options: [
+        { value: 'a', label: 'Ouvir várias fontes e avaliar os fatos' },
+        { value: 'b', label: 'Aceitar qualquer afirmação sem questionar' },
+        { value: 'c', label: 'Compartilhar tudo sem confirmação' }
+      ],
+      correct: 'a'
+    },
+    {
+      id: 10,
+      question: 'Qual é um sinal de que uma notícia pode ser falsa?',
+      options: [
+        { value: 'a', label: 'Fonte desconhecida e linguagem alarmista' },
+        { value: 'b', label: 'Texto bem escrito e bem documentado' },
+        { value: 'c', label: 'Nome de veículo reconhecido' }
+      ],
+      correct: 'a'
+    },
+    {
+      id: 11,
+      question: 'Como a educação contribui para a cidadania?',
+      options: [
+        { value: 'a', label: 'Ajuda a formar pessoas críticas e conscientes' },
+        { value: 'b', label: 'Apenas repete informações sem questionar' },
+        { value: 'c', label: 'Substitui a participação social' }
+      ],
+      correct: 'a'
+    },
+    {
+      id: 12,
+      question: 'Qual é um comportamento responsável em redes sociais?',
+      options: [
+        { value: 'a', label: 'Conferir a veracidade antes de divulgar' },
+        { value: 'b', label: 'Compartilhar qualquer coisa sem contexto' },
+        { value: 'c', label: 'Ignorar mensagens importantes' }
+      ],
+      correct: 'a'
     }
   ];
 
