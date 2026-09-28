@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
-from .models import Conteudo, Pergunta, Post, Resultado, Usuario
+from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 
 User = get_user_model()
 
@@ -71,13 +71,44 @@ class RegisterSerializer(serializers.Serializer):
 
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    liked_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'created_at', 'author']
+        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'created_at', 'author', 'likes_count', 'comments_count', 'liked_by_me']
 
     def get_author(self, obj):
         return obj.user.username
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+    def get_comments_count(self, obj):
+        return obj.comments.count()
+
+    def get_liked_by_me(self, obj):
+        user = self.context['request'].user
+        return user.is_authenticated and obj.likes.filter(user=user).exists()
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = Profile
+        fields = ['username', 'email', 'bio', 'avatar_url', 'avatar_choice']
+
+
+class PostCommentSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = PostComment
+        fields = ['id', 'post', 'content', 'author', 'created_at']
+        read_only_fields = ['post']
 
 
 class ConteudoSerializer(serializers.ModelSerializer):

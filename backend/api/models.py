@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.contrib.auth import get_user_model
 
 
 class Post(models.Model):
@@ -26,6 +27,39 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Profile(models.Model):
+    AVATAR_CHOICES = [
+        ('sun', 'Sol'),
+        ('leaf', 'Folha'),
+        ('star', 'Estrela'),
+        ('book', 'Livro'),
+    ]
+
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    bio = models.CharField(max_length=240, blank=True)
+    avatar_url = models.URLField(blank=True)
+    avatar_choice = models.CharField(max_length=20, choices=AVATAR_CHOICES, default='sun')
+
+    def __str__(self):
+        return f'Perfil de {self.user.username}'
+
+
+class PostLike(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['post', 'user'], name='unique_post_like')]
+
+
+class PostComment(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_comments')
+    content = models.CharField(max_length=500)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class Conteudo(models.Model):

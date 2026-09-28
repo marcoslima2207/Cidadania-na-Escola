@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { apiConfig } from '../../api-config';
 
 @Component({
   selector: 'app-header',
@@ -21,7 +23,12 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       </div>
 
       <div class="header-actions">
-        <a href="#login" class="header-login">Entrar</a>
+        @if (isLoggedIn) {
+          <a routerLink="/perfil" class="header-login">Meu perfil</a>
+          <button type="button" class="logout-button" (click)="logout()">Sair</button>
+        } @else {
+          <a routerLink="/acesso" class="header-login">Entrar</a>
+        }
 
         <button class="menu-toggle" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen" aria-controls="main-navigation">
           <span aria-hidden="true">☰</span>
@@ -37,6 +44,9 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         <a routerLink="/direitos-trabalhistas" routerLinkActive="active">Direitos Trabalhistas</a>
         <a routerLink="/quiz" routerLinkActive="active">Quiz</a>
         <a routerLink="/sobre" routerLinkActive="active">Sobre</a>
+        <a routerLink="/postagens" routerLinkActive="active">Postagens</a>
+        <a routerLink="/publicar" routerLinkActive="active">Publicar</a>
+        @if (isLoggedIn) { <a routerLink="/perfil" routerLinkActive="active">Meu perfil</a> }
       </nav>
     </header>
   `,
@@ -154,7 +164,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       .mark { width: 18px; height: 29px; }
       .mark--green { left: 16px; }
       .brand__text { font-size: 0.78rem; }
-      .header-login { display: none; }
+      .header-login, .logout-button { display: none; }
       .nav.nav--open { display: grid; grid-template-columns: 1fr 1fr; }
       .nav a { text-align: center; padding: 0.65rem 0.45rem; font-size: 0.9rem; }
     }
@@ -162,4 +172,21 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 })
 export class HeaderComponent {
   menuOpen = false;
+  isLoggedIn = !!localStorage.getItem('cidadania_token');
+
+  constructor(private http: HttpClient, private router: Router) {}
+
+  logout(): void {
+    const token = localStorage.getItem('cidadania_token');
+    this.http.post(`${apiConfig.baseUrl}/auth/logout/`, {}, { headers: new HttpHeaders({ Authorization: `Token ${token || ''}` }) }).subscribe({
+      next: () => this.finishLogout(),
+      error: () => this.finishLogout()
+    });
+  }
+
+  private finishLogout(): void {
+    localStorage.removeItem('cidadania_token');
+    this.isLoggedIn = false;
+    this.router.navigate(['/acesso']);
+  }
 }

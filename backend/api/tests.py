@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Conteudo, Pergunta, Resultado
+from .models import Conteudo, Pergunta, Post, Resultado
 
 User = get_user_model()
 
@@ -105,3 +105,20 @@ class ApiEndpointsTests(APITestCase):
             HTTP_AUTHORIZATION=f'Token {token}'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_post_like_and_comment(self):
+        post = Post.objects.create(
+            user=self.user,
+            title='Participação cidadã',
+            category='Cidadania',
+            content='Participar também é transformar.',
+        )
+        login_response = self.client.post(reverse('auth-login'), {'username': 'aluno', 'password': '12345678'}, format='json')
+        token = login_response.data['token']
+        headers = {'HTTP_AUTHORIZATION': f'Token {token}'}
+
+        like_response = self.client.post(reverse('post-like', args=[post.id]), {}, format='json', **headers)
+        comment_response = self.client.post(reverse('post-comments', args=[post.id]), {'content': 'Concordo!'}, format='json', **headers)
+
+        self.assertEqual(like_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(comment_response.status_code, status.HTTP_201_CREATED)
