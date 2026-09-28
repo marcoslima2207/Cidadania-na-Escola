@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs';
 import { apiConfig } from '../../api-config';
 
 @Component({
@@ -185,7 +186,11 @@ export class HeaderComponent {
   menuOpen = false;
   isLoggedIn = !!localStorage.getItem('cidadania_token');
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(private http: HttpClient, private router: Router) {
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      this.isLoggedIn = !!localStorage.getItem('cidadania_token');
+    });
+  }
 
   logout(): void {
     const token = localStorage.getItem('cidadania_token');
