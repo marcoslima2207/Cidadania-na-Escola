@@ -4,6 +4,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { apiConfig } from '../../api-config';
+
 type PostTheme = 'justice' | 'education' | 'fake-news';
 
 type FeedMediaType = 'image' | 'video';
@@ -1087,7 +1089,7 @@ export class HomeComponent implements OnInit {
   isLoggedIn = false;
   loginOpen = false;
   authMode: 'login' | 'register' = 'login';
-  private readonly apiBaseUrl = 'http://localhost:8000/api';
+  private readonly apiBaseUrl = apiConfig.baseUrl;
   private readonly tokenKey = 'cidadania_token';
 
   loginForm: LoginForm = {

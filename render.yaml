@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: cidadania-na-escola-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn config.wsgi:application
+    healthCheckPath: /api/
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DB_ENGINE
+        value: postgresql
+      - key: DB_NAME
+        fromDatabase:
+          name: cidadania-na-escola-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: cidadania-na-escola-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: cidadania-na-escola-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: cidadania-na-escola-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: cidadania-na-escola-db
+          property: port
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://marcoslima2207.github.io
+
+databases:
+  - name: cidadania-na-escola-db
+    plan: free

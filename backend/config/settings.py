@@ -20,9 +20,9 @@ SECRET_KEY = os.getenv(
     'django-insecure-chave-apenas-para-desenvolvimento'
 )
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
 # ============================================================
@@ -133,8 +133,12 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:4200',
-    'http://127.0.0.1:4200',
+    origin.strip()
+    for origin in os.getenv(
+        'CORS_ALLOWED_ORIGINS',
+        'http://localhost:4200,http://127.0.0.1:4200,https://marcoslima2207.github.io',
+    ).split(',')
+    if origin.strip()
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
