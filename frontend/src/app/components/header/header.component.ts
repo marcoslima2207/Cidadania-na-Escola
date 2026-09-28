@@ -120,7 +120,10 @@ import { apiConfig } from '../../api-config';
       padding: 0.7rem 1rem;
       font-weight: 700;
       box-shadow: 0 10px 20px rgba(13, 45, 107, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
+    .header-login:hover { transform: translateY(-2px); box-shadow: 0 14px 26px rgba(13, 45, 107, 0.24); background: #17428d; }
+    .header-login:active, .logout-button:active, .menu-toggle:active, .nav a:active, .mobile-logout:active { transform: scale(0.96); }
     .logout-button {
       border: 1px solid #cbd9e8;
       border-radius: 999px;
@@ -147,6 +150,7 @@ import { apiConfig } from '../../api-config';
       border: 1px solid rgba(13,45,107,0.08);
       border-radius: 18px;
       box-shadow: 0 16px 30px rgba(14,35,68,0.08);
+      animation: menu-in 0.22s ease both;
     }
     .menu-toggle {
       display: inline-flex;
@@ -159,7 +163,10 @@ import { apiConfig } from '../../api-config';
       color: #173a6d;
       font-weight: 800;
       box-shadow: 0 10px 20px rgba(17, 51, 94, 0.06);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     }
+    .menu-toggle:hover { transform: translateY(-2px); background: #f4f8ff; box-shadow: 0 14px 24px rgba(17, 51, 94, 0.12); }
     .nav a {
       text-decoration: none;
       color: #173a6d;
@@ -172,6 +179,10 @@ import { apiConfig } from '../../api-config';
     .nav a:hover {
       background: #eaf3ff;
       transform: translateY(-1px);
+    }
+    @keyframes menu-in {
+      from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @media (max-width: 700px) {
       .site-header {
