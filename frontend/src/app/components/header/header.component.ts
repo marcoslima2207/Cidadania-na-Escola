@@ -101,13 +101,18 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       box-shadow: 0 10px 20px rgba(13, 45, 107, 0.18);
     }
     .nav {
-      display: flex;
+      display: none;
       flex-wrap: wrap;
       gap: 0.7rem 1rem;
       justify-content: center;
+      width: 100%;
+      padding-top: 0.5rem;
+    }
+    .nav.nav--open {
+      display: flex;
     }
     .menu-toggle {
-      display: none;
+      display: inline-flex;
       align-items: center;
       gap: 0.45rem;
       border: 1px solid #cbd9e8;
@@ -141,12 +146,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       .mark--green { left: 16px; }
       .brand__text { font-size: 0.78rem; }
       .header-login { display: none; }
-      .menu-toggle { display: inline-flex; }
-      .nav {
-        display: none;
-        width: 100%;
-        padding-top: 0.5rem;
-      }
       .nav.nav--open { display: grid; grid-template-columns: 1fr 1fr; }
       .nav a { text-align: center; padding: 0.65rem 0.45rem; font-size: 0.9rem; }
     }
