@@ -114,41 +114,6 @@ interface DraftPost {
         </article>
       </section>
 
-      <section class="palette-section">
-        <div class="palette-card">
-          <p class="section-label">Paleta de cores</p>
-          <div class="swatches">
-            <div class="swatch swatch--navy"><span>#153E79</span></div>
-            <div class="swatch swatch--green"><span>#2CAE5F</span></div>
-            <div class="swatch swatch--sand"><span>#D6D8DB</span></div>
-            <div class="swatch swatch--gold"><span>#E5C34B</span></div>
-          </div>
-        </div>
-
-        <div class="typography-card">
-          <p class="section-label">Tipografia</p>
-          <h3>Montserrat</h3>
-          <p>Ba Bb Cc Dd Ee Ff Gg Hh Ii Jj Kk Ll Mm Nn Oo Pp Qq Rr Ss Tt Uu Vv Ww Xx Yy Zz</p>
-          <div class="type-specs">
-            <span>Títulos</span>
-            <span>Subtítulos</span>
-            <span>Textos</span>
-          </div>
-        </div>
-
-        <div class="icon-card">
-          <p class="section-label">Ícones sugeridos</p>
-          <div class="icon-grid">
-            <span>◉</span>
-            <span>◌</span>
-            <span>☰</span>
-            <span>✦</span>
-            <span>✓</span>
-            <span>◍</span>
-          </div>
-        </div>
-      </section>
-
       <section class="posts-section">
         <h2 class="posts-title">POSTS:</h2>
 
