@@ -1254,7 +1254,11 @@ export class HomeComponent implements OnInit {
         this.registerForm = { name: '', email: '', password: '' };
       },
       error: (error) => {
-        const message = error?.error?.email?.[0] || error?.error?.password?.[0] || 'Não foi possível criar a conta.';
+        const message = error?.error?.email?.[0]
+          || error?.error?.password?.[0]
+          || error?.error?.name?.[0]
+          || error?.error?.detail
+          || 'Não foi possível criar a conta. Tente novamente em alguns segundos.';
         alert(message);
       }
     });
