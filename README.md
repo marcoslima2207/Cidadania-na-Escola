@@ -163,3 +163,111 @@ A aplicação seguirá uma arquitetura separando o front-end, back-end e banco d
                     │      PostgreSQL      │
                     │    Banco de Dados    │
                     └──────────────────────┘
+```
+
+## ✅ Funcionalidades atuais
+
+- Navegação responsiva para computador e celular;
+- Conteúdos sobre democracia, desinformação, checagem e direitos trabalhistas;
+- Quiz interativo com pontuação e resultado;
+- Criação de conta e login por e-mail ou usuário;
+- Logout e controle de sessão por token;
+- Perfil personalizável com bio, foto por URL ou avatar ilustrativo;
+- Área exclusiva para criar publicações;
+- Área exclusiva para visualizar as postagens;
+- Publicações com texto, imagem ou link de vídeo;
+- Curtidas e comentários autenticados;
+- Exclusão permitida somente para o autor da publicação;
+- Interface responsiva com animações leves e suporte a redução de movimento.
+
+## 🌐 Links
+
+- Site: https://marcoslima2207.github.io/Cidadania-na-Escola/
+- API: https://cidadania-na-escola-api.onrender.com/api/
+
+O front-end é publicado no GitHub Pages e a API Django é executada no Render.
+
+## 🚀 Como executar localmente
+
+### Back-end
+
+```bash
+cd backend
+python -m venv .venv
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+A API local ficará disponível em `http://localhost:8000/api/`.
+
+### Front-end
+
+Em outro terminal:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+O site local ficará disponível em `http://localhost:4200/`.
+
+Para gerar a versão de produção:
+
+```bash
+npm run build
+```
+
+## 🧪 Testes e validação
+
+```bash
+cd backend
+python manage.py test api.tests
+```
+
+```bash
+cd frontend
+npm run build
+```
+
+## 🔐 Configuração de produção
+
+O back-end usa variáveis de ambiente para produção:
+
+```text
+DJANGO_SECRET_KEY=chave-secreta
+DEBUG=False
+ALLOWED_HOSTS=.onrender.com
+CORS_ALLOWED_ORIGINS=https://marcoslima2207.github.io
+```
+
+O deploy do Render deve executar as migrações antes de iniciar o serviço:
+
+```bash
+pip install -r requirements.txt && python manage.py migrate
+```
+
+## 🔭 Futuras melhorias
+
+- Upload real de fotos e vídeos, sem depender de URLs externas;
+- Armazenamento permanente em PostgreSQL com backups;
+- Recuperação de senha por e-mail;
+- Confirmação de e-mail no cadastro;
+- Edição e exclusão de comentários próprios;
+- Respostas encadeadas aos comentários;
+- Notificações de curtidas e comentários;
+- Busca e filtros por categoria;
+- Paginação e carregamento progressivo das postagens;
+- Moderação e denúncia de conteúdo;
+- Painel administrativo para professores e equipe do projeto;
+- Testes end-to-end no fluxo de login e publicação;
+- Melhorias de acessibilidade e suporte multilíngue.
+
+## 📄 Licença e contexto acadêmico
+
+Este projeto foi desenvolvido como uma plataforma educacional para um projeto de extensão universitária. O conteúdo tem finalidade informativa e educativa e não substitui orientação jurídica ou profissional.
