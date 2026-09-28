@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap');
 
 :root {
-  --bg-page: #eef2ef;
+  --bg-page: #f4f7f5;
   --panel-bg: #f4f1ee;
   --deep-blue: #0a2d6c;
   --blue-strong: #0a47c9;
@@ -28,6 +28,10 @@ body {
 
 body {
   display: block;
+  background:
+    radial-gradient(circle at 6% 0%, rgba(240, 191, 45, 0.1), transparent 22rem),
+    radial-gradient(circle at 94% 18%, rgba(44, 174, 95, 0.08), transparent 24rem),
+    var(--bg-page);
 }
 
 img {
@@ -52,4 +56,14 @@ h2,
 h3,
 .brand__text {
   font-family: 'Montserrat', 'Segoe UI', sans-serif;
+}
+
+::selection {
+  background: #f0bf2d;
+  color: #0a2d6c;
+}
+
+:focus-visible {
+  outline: 3px solid rgba(240, 191, 45, 0.9);
+  outline-offset: 3px;
 }

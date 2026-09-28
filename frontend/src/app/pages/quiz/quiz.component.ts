@@ -69,35 +69,48 @@ interface Question {
   styles: [`
     :host { display: block; }
     .quiz {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 2rem 3rem;
+      max-width: 960px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem 4rem;
     }
     .quiz__header {
-      background: linear-gradient(135deg, #edf7ff 0%, #edf9f1 100%);
-      border-radius: 28px;
-      padding: 2rem 2rem 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 16px 35px rgba(12, 49, 92, 0.06);
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0d2d6b 0%, #164b9b 72%, #2068aa 100%);
+      border-radius: 30px;
+      padding: 2.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 24px 50px rgba(12, 49, 92, 0.16);
+    }
+    .quiz__header::after {
+      content: '';
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      right: -70px;
+      bottom: -120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.09);
     }
     .eyebrow {
       text-transform: uppercase;
       letter-spacing: .12em;
-      color: #1b7a43;
+      color: #2cae5f;
       font-weight: 800;
       margin: 0 0 0.8rem;
     }
     h1 {
       margin: 0;
       font-size: clamp(2.2rem, 4vw, 3.8rem);
-      color: #0d2d6b;
+      color: white;
     }
     .question-card, .result-card {
-      background: #f7f8fb;
-      border: 1px solid #dfe6f1;
-      border-radius: 24px;
-      padding: 2rem;
-      box-shadow: 0 18px 34px rgba(11, 33, 63, 0.05);
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(13,45,107,0.1);
+      border-radius: 26px;
+      padding: 2.25rem;
+      box-shadow: 0 20px 45px rgba(11, 33, 63, 0.08);
+      backdrop-filter: blur(12px);
     }
     .progress {
       margin-bottom: 1.25rem;
@@ -138,7 +151,8 @@ interface Question {
     }
     .option:hover {
       border-color: #8bb5ff;
-      transform: translateY(-1px);
+      background: #f7fbff;
+      transform: translateY(-2px);
     }
     .option input { accent-color: #153e79; }
     .actions { margin-top: 1.5rem; }
@@ -153,7 +167,9 @@ interface Question {
       background: #153e79;
       color: white;
       box-shadow: 0 12px 22px rgba(21, 62, 121, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 16px 28px rgba(21, 62, 121, 0.24); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .score {
       font-size: 1.2rem;
@@ -163,7 +179,7 @@ interface Question {
     }
     .message { line-height: 1.7; color: #2f3d4f; }
     @media (max-width: 640px) {
-      .quiz { padding: 0 1rem 3rem; }
+      .quiz { margin: 1.5rem auto; padding: 0 1rem 3rem; }
       .quiz__header, .question-card, .result-card { padding: 1.3rem 1rem; }
       .option { padding: 0.85rem 0.75rem; }
     }

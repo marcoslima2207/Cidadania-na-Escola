@@ -20,7 +20,7 @@ import { HeaderComponent } from './components/header/header.component';
       :host {
         display: block;
         min-height: 100vh;
-        background: #f4f1ee;
+        background: transparent;
       }
       .page-wrap {
         min-height: calc(100vh - 160px);
