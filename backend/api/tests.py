@@ -72,6 +72,16 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
 
+    def test_register_creates_user_and_returns_token(self):
+        response = self.client.post(
+            reverse('auth-register'),
+            {'name': 'Nova Pessoa', 'email': 'nova@email.com', 'password': '12345678'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('token', response.data)
+        self.assertTrue(User.objects.filter(email='nova@email.com').exists())
+
     def test_create_post_requires_auth(self):
         login_response = self.client.post(
             reverse('auth-login'),

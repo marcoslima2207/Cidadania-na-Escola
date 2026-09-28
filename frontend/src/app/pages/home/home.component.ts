@@ -38,6 +38,12 @@ interface LoginForm {
   password: string;
 }
 
+interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+}
+
 interface DraftPost {
   category: string;
   type: FeedMediaType;
@@ -55,17 +61,36 @@ interface DraftPost {
         <div class="login-overlay" (click)="closeLogin()">
           <div class="login-modal" (click)="$event.stopPropagation()">
             <button type="button" class="close-button" (click)="closeLogin()" aria-label="Fechar login">×</button>
-            <p class="eyebrow">Acesso</p>
-            <h2>Entrar na plataforma</h2>
-            <div class="login-field">
-              <label for="email">E-mail</label>
-              <input id="email" type="email" [(ngModel)]="loginForm.email" placeholder="nome@exemplo.com" />
-            </div>
-            <div class="login-field">
-              <label for="password">Senha</label>
-              <input id="password" type="password" [(ngModel)]="loginForm.password" placeholder="Digite sua senha" />
-            </div>
-            <button type="button" class="btn btn-primary btn-block" (click)="login()">Entrar</button>
+            <p class="eyebrow">Acesso à comunidade</p>
+            @if (authMode === 'login') {
+              <h2>Entrar na plataforma</h2>
+              <div class="login-field">
+                <label for="login-email">E-mail ou usuário</label>
+                <input id="login-email" type="text" [(ngModel)]="loginForm.email" placeholder="nome@exemplo.com" />
+              </div>
+              <div class="login-field">
+                <label for="login-password">Senha</label>
+                <input id="login-password" type="password" [(ngModel)]="loginForm.password" placeholder="Digite sua senha" />
+              </div>
+              <button type="button" class="btn btn-primary btn-block" (click)="login()">Entrar</button>
+              <p class="auth-switch">Ainda não tem conta? <button type="button" (click)="setAuthMode('register')">Criar conta</button></p>
+            } @else {
+              <h2>Criar sua conta</h2>
+              <div class="login-field">
+                <label for="register-name">Nome</label>
+                <input id="register-name" type="text" [(ngModel)]="registerForm.name" placeholder="Como você quer ser chamado?" />
+              </div>
+              <div class="login-field">
+                <label for="register-email">E-mail</label>
+                <input id="register-email" type="email" [(ngModel)]="registerForm.email" placeholder="nome@exemplo.com" />
+              </div>
+              <div class="login-field">
+                <label for="register-password">Senha</label>
+                <input id="register-password" type="password" [(ngModel)]="registerForm.password" placeholder="Mínimo de 8 caracteres" />
+              </div>
+              <button type="button" class="btn btn-primary btn-block" (click)="register()">Criar conta</button>
+              <p class="auth-switch">Já possui uma conta? <button type="button" (click)="setAuthMode('login')">Entrar</button></p>
+            }
           </div>
         </div>
       }
@@ -893,6 +918,22 @@ interface DraftPost {
       cursor: pointer;
     }
 
+    .auth-switch {
+      margin: 1rem 0 0;
+      text-align: center;
+      color: #5d6980;
+      font-size: 0.88rem;
+    }
+
+    .auth-switch button {
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: #153e79;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
     .quiz-preview {
       margin-top: 2rem;
       display: grid;
@@ -1045,10 +1086,17 @@ export class HomeComponent implements OnInit {
   currentIndex = 0;
   isLoggedIn = false;
   loginOpen = false;
+  authMode: 'login' | 'register' = 'login';
   private readonly apiBaseUrl = 'http://localhost:8000/api';
   private readonly tokenKey = 'cidadania_token';
 
   loginForm: LoginForm = {
+    email: '',
+    password: ''
+  };
+
+  registerForm: RegisterForm = {
+    name: '',
     email: '',
     password: ''
   };
@@ -1151,7 +1199,12 @@ export class HomeComponent implements OnInit {
   }
 
   openLogin(): void {
+    this.authMode = 'login';
     this.loginOpen = true;
+  }
+
+  setAuthMode(mode: 'login' | 'register'): void {
+    this.authMode = mode;
   }
 
   closeLogin(): void {
@@ -1180,6 +1233,29 @@ export class HomeComponent implements OnInit {
           alert('Credenciais inválidas. Use um usuário ou e-mail cadastrado no backend.');
         }
       });
+  }
+
+  register(): void {
+    if (!this.registerForm.name.trim() || !this.registerForm.email.trim() || !this.registerForm.password.trim()) {
+      return;
+    }
+
+    this.http.post<{ token: string; user: { username: string } }>(`${this.apiBaseUrl}/auth/register/`, {
+      name: this.registerForm.name.trim(),
+      email: this.registerForm.email.trim(),
+      password: this.registerForm.password
+    }).subscribe({
+      next: (response) => {
+        localStorage.setItem(this.tokenKey, response.token);
+        this.isLoggedIn = true;
+        this.loginOpen = false;
+        this.registerForm = { name: '', email: '', password: '' };
+      },
+      error: (error) => {
+        const message = error?.error?.email?.[0] || error?.error?.password?.[0] || 'Não foi possível criar a conta.';
+        alert(message);
+      }
+    });
   }
 
   loadPosts(): void {

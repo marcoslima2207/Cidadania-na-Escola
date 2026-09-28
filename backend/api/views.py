@@ -9,6 +9,7 @@ from .models import Conteudo, Pergunta, Post, Resultado, Usuario
 from .serializers import (
     ConteudoSerializer,
     LoginSerializer,
+    RegisterSerializer,
     PerguntaSerializer,
     PostSerializer,
     ResultadoSerializer,
@@ -24,6 +25,17 @@ class AuthViewSet(viewsets.ViewSet):
         user = serializer.validated_data['user']
         token, _ = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'user': {'id': user.id, 'username': user.username, 'email': user.email}})
+
+    @action(detail=False, methods=['post'], url_path='register')
+    def register(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        user = result['user']
+        return Response(
+            {'token': result['token'], 'user': {'id': user.id, 'username': user.username, 'email': user.email}},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PostViewSet(viewsets.ModelViewSet):

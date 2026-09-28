@@ -39,6 +39,36 @@ class LoginSerializer(serializers.Serializer):
         return {'token': token.key, 'user': user}
 
 
+class RegisterSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError('Este e-mail já está cadastrado.')
+        return value.lower()
+
+    def create(self, validated_data):
+        email = validated_data['email']
+        base_username = email.split('@')[0].lower()
+        username = base_username
+        suffix = 1
+
+        while User.objects.filter(username=username).exists():
+            suffix += 1
+            username = f'{base_username}{suffix}'
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=validated_data['password'],
+            first_name=validated_data['name'][:150],
+        )
+        token, _ = Token.objects.get_or_create(user=user)
+        return {'token': token.key, 'user': user}
+
+
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
 
