@@ -247,7 +247,10 @@ interface DraftPost {
   styles: [`
     :host {
       display: block;
-      background: linear-gradient(180deg, #eef3f0 0%, #f8f9fb 100%);
+      background:
+        radial-gradient(circle at 8% 4%, rgba(240, 191, 45, 0.14), transparent 24rem),
+        radial-gradient(circle at 92% 28%, rgba(44, 174, 95, 0.1), transparent 26rem),
+        linear-gradient(180deg, #eef3f0 0%, #f8f9fb 100%);
       color: #0d2d6b;
       min-height: 100vh;
       padding-bottom: 2rem;
@@ -256,7 +259,7 @@ interface DraftPost {
     .home-page {
       max-width: 1280px;
       margin: 0 auto;
-      padding: 1.25rem 1.4rem 2rem;
+      padding: 1.5rem 1.4rem 3rem;
     }
 
     .eyebrow,
@@ -279,7 +282,9 @@ interface DraftPost {
       padding: 2rem 2rem 0;
       overflow: hidden;
       position: relative;
-      box-shadow: 0 24px 50px rgba(13, 45, 107, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 28px 70px rgba(13, 45, 107, 0.2);
+      animation: rise-in 0.7s ease both;
     }
 
     .identity-banner::before,
@@ -428,6 +433,13 @@ interface DraftPost {
       min-height: 220px;
       border: 1px solid rgba(13,45,107,0.08);
       box-shadow: 0 16px 30px rgba(14,35,68,0.05);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    .info-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(13,45,107,0.16);
+      box-shadow: 0 22px 40px rgba(14,35,68,0.1);
     }
 
     .info-card--blue { background: #edf5ff; }
@@ -458,101 +470,6 @@ interface DraftPost {
       margin: 0;
       line-height: 1.6;
       color: #2f3d4f;
-    }
-
-    .palette-section {
-      display: grid;
-      grid-template-columns: 1.2fr 1.2fr 1fr;
-      gap: 1rem;
-      margin-top: 1.6rem;
-    }
-
-    .palette-card,
-    .typography-card,
-    .icon-card {
-      background: rgba(255,255,255,0.8);
-      border: 1px solid rgba(13,45,107,0.08);
-      border-radius: 22px;
-      padding: 1.4rem 1.2rem;
-      box-shadow: 0 16px 30px rgba(14,35,68,0.04);
-    }
-
-    .swatches {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-
-    .swatch {
-      flex: 1;
-      min-width: 90px;
-      height: 92px;
-      border-radius: 50%;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 0.8rem;
-      color: white;
-      font-weight: 700;
-      font-size: 0.72rem;
-      text-align: center;
-    }
-
-    .swatch--navy { background: #153e79; }
-    .swatch--green { background: #2cae5f; }
-    .swatch--sand { background: #d6d8db; color: #0d2d6b; }
-    .swatch--gold { background: #e5c34b; color: #0d2d6b; }
-
-    .typography-card h3 {
-      margin: 0 0 0.6rem;
-      font-size: clamp(2rem, 3vw, 3rem);
-      line-height: 1;
-      color: #0d2d6b;
-    }
-
-    .typography-card p {
-      margin: 0;
-      color: #2f3d4f;
-      line-height: 1.7;
-    }
-
-    .type-specs {
-      display: flex;
-      gap: 0.8rem;
-      flex-wrap: wrap;
-      margin-top: 1rem;
-    }
-
-    .type-specs span {
-      padding: 0.45rem 0.8rem;
-      background: #edf5ff;
-      border-radius: 999px;
-      color: #173a6d;
-      font-size: 0.78rem;
-      font-weight: 700;
-    }
-
-    .icon-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 0.8rem;
-      margin-top: 1rem;
-    }
-
-    .icon-grid span {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 52px;
-      height: 52px;
-      margin: 0 auto;
-      border-radius: 16px;
-      border: 1px solid rgba(13,45,107,0.08);
-      background: #f3f7ff;
-      color: #0d2d6b;
-      font-size: 1.5rem;
-      font-weight: 700;
     }
 
     .posts-section {
@@ -693,6 +610,13 @@ interface DraftPost {
       align-items: center;
       justify-content: center;
       line-height: 1;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .carousel-button:hover {
+      transform: scale(1.06);
+      background: white;
+      box-shadow: 0 10px 22px rgba(13,45,107,0.14);
     }
 
     .social-section {
@@ -783,6 +707,11 @@ interface DraftPost {
       border: none;
       font-weight: 700;
       cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
     }
 
     .btn-primary {
@@ -1046,6 +975,11 @@ interface DraftPost {
       font-weight: 800;
     }
 
+    @keyframes rise-in {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     @media (max-width: 980px) {
       .identity-banner,
       .social-section,
@@ -1057,9 +991,6 @@ interface DraftPost {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .palette-section {
-        grid-template-columns: 1fr;
-      }
     }
 
     @media (max-width: 700px) {

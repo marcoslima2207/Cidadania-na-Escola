@@ -50,7 +50,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       margin: 0 auto;
       padding: 1.2rem 2rem 1.6rem;
       flex-wrap: wrap;
-      background: rgba(255, 255, 255, 0.2);
+      position: relative;
+      z-index: 10;
+      background: rgba(248, 250, 249, 0.86);
+      border-bottom: 1px solid rgba(13, 45, 107, 0.08);
+      backdrop-filter: blur(16px);
     }
     .brand {
       display: inline-flex;
@@ -110,6 +114,11 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     }
     .nav.nav--open {
       display: flex;
+      padding: 0.7rem;
+      background: rgba(255,255,255,0.82);
+      border: 1px solid rgba(13,45,107,0.08);
+      border-radius: 18px;
+      box-shadow: 0 16px 30px rgba(14,35,68,0.08);
     }
     .menu-toggle {
       display: inline-flex;
