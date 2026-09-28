@@ -114,6 +114,17 @@ import { apiConfig } from '../../api-config';
       font-weight: 700;
       box-shadow: 0 10px 20px rgba(13, 45, 107, 0.18);
     }
+    .logout-button {
+      border: 1px solid #cbd9e8;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      background: white;
+      color: #173a6d;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .logout-button:hover { background: #edf5ff; color: #0d2d6b; }
     .nav {
       display: none;
       flex-wrap: wrap;
