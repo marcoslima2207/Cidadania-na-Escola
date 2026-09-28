@@ -19,11 +19,11 @@ interface Profile { username: string; email: string; bio: string; avatar_url: st
         @if (profile) {
           <div class="profile-body">
             <div class="avatar-preview" [class]="'avatar-' + profile.avatar_choice">
-              @if (profile.avatar_url) { <img [src]="profile.avatar_url" alt="Foto de perfil" /> } @else { <span>{{ avatarSymbol(profile.avatar_choice) }}</span> }
+              @if (profile.avatar_url && !imageError) { <img [src]="profile.avatar_url" alt="Foto de perfil" (error)="imageError = true" /> } @else { <span>{{ avatarSymbol(profile.avatar_choice) }}</span> }
             </div>
             <div class="profile-form">
               <label>Nome de usuário<input [value]="profile.username" disabled /></label>
-              <label>Foto de perfil por URL<input [(ngModel)]="profile.avatar_url" placeholder="https://.../sua-foto.jpg" /></label>
+              <label>Foto de perfil por URL<input [(ngModel)]="profile.avatar_url" (ngModelChange)="imageError = false" placeholder="https://site.com/sua-foto.jpg" /><small>Use o link direto da imagem, não um link de busca do Google.</small></label>
               <label>Ou escolha uma ilustração
                 <select [(ngModel)]="profile.avatar_choice"><option value="sun">Sol</option><option value="leaf">Folha</option><option value="star">Estrela</option><option value="book">Livro</option></select>
               </label>
@@ -41,12 +41,12 @@ interface Profile { username: string; email: string; bio: string; avatar_url: st
     .profile-card { background:#fff; border:1px solid rgba(13,45,107,.08); border-radius:30px; overflow:hidden; box-shadow:0 24px 60px rgba(13,45,107,.1); }
     .profile-head { padding:2.5rem; color:white; background:linear-gradient(145deg,#0d2d6b,#1a60a9); } .profile-head h1{margin:0;font-size:clamp(2.4rem,5vw,4rem)} .profile-head p:last-child{color:rgba(255,255,255,.8)} .eyebrow{color:#2cae5f;text-transform:uppercase;letter-spacing:.12em;font-weight:800}
     .profile-body { display:grid; grid-template-columns:220px 1fr; gap:2rem; padding:2.5rem; } .avatar-preview{width:180px;height:180px;border-radius:50%;display:grid;place-items:center;background:#f0c52e;color:#0d2d6b;font-size:5rem;overflow:hidden;border:8px solid #edf5ff}.avatar-preview img{width:100%;height:100%;object-fit:cover}.avatar-leaf{background:#2cae5f}.avatar-star{background:#eaf3ff}.avatar-book{background:#dfe5ed}
-    .profile-form{display:grid;gap:1rem} label{display:grid;gap:.4rem;color:#173a6d;font-weight:700;font-size:.85rem} input,select,textarea{width:100%;box-sizing:border-box;padding:.85rem 1rem;border:1px solid #d7e0eb;border-radius:12px;font:inherit}.save{border:0;border-radius:999px;padding:1rem;background:#0d2d6b;color:white;font-weight:800;cursor:pointer}.message{color:#1b7a43;font-weight:700}
+    .profile-form{display:grid;gap:1rem} label{display:grid;gap:.4rem;color:#173a6d;font-weight:700;font-size:.85rem} label small{color:#718096;font-size:.75rem;font-weight:500} input,select,textarea{width:100%;box-sizing:border-box;padding:.85rem 1rem;border:1px solid #d7e0eb;border-radius:12px;font:inherit}.save{border:0;border-radius:999px;padding:1rem;background:#0d2d6b;color:white;font-weight:800;cursor:pointer}.message{color:#1b7a43;font-weight:700}
     @media(max-width:700px){.profile-page{padding:1.5rem 1rem 3rem}.profile-body{grid-template-columns:1fr;padding:1.5rem}.avatar-preview{margin:auto}}
   `]
 })
 export class PerfilComponent implements OnInit {
-  profile: Profile | null = null; message = ''; private readonly api = apiConfig.baseUrl;
+  profile: Profile | null = null; message = ''; imageError = false; private readonly api = apiConfig.baseUrl;
   constructor(private http: HttpClient, private router: Router) {}
   ngOnInit(): void { this.http.get<Profile>(`${this.api}/auth/profile/`, { headers: this.headers() }).subscribe({ next: p => this.profile = p, error: () => this.router.navigate(['/acesso']) }); }
   save(): void { if (!this.profile) return; this.http.patch<Profile>(`${this.api}/auth/profile/`, this.profile, { headers: this.headers() }).subscribe({ next: p => { this.profile = p; this.message = 'Perfil atualizado.'; } }); }
