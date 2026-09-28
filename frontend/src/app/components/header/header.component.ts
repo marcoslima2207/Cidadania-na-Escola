@@ -20,10 +20,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </div>
       </div>
 
-      <button class="menu-toggle" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen" aria-controls="main-navigation">
-        <span aria-hidden="true">☰</span>
-        <span>Menu</span>
-      </button>
+      <div class="header-actions">
+        <a href="#login" class="header-login">Entrar</a>
+
+        <button class="menu-toggle" type="button" (click)="menuOpen = !menuOpen" [attr.aria-expanded]="menuOpen" aria-controls="main-navigation">
+          <span aria-hidden="true">☰</span>
+          <span>Menu</span>
+        </button>
+      </div>
 
       <nav id="main-navigation" class="nav" [class.nav--open]="menuOpen" aria-label="Menu principal">
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
@@ -79,6 +83,23 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       line-height: 0.9;
       font-size: 1.05rem;
     }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .header-login {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: #0d2d6b;
+      color: white;
+      border-radius: 999px;
+      padding: 0.7rem 1rem;
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(13, 45, 107, 0.18);
+    }
     .nav {
       display: flex;
       flex-wrap: wrap;
@@ -119,6 +140,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       .mark { width: 18px; height: 29px; }
       .mark--green { left: 16px; }
       .brand__text { font-size: 0.78rem; }
+      .header-login { display: none; }
       .menu-toggle { display: inline-flex; }
       .nav {
         display: none;
