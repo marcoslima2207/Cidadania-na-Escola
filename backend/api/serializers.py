@@ -71,16 +71,29 @@ class RegisterSerializer(serializers.Serializer):
 
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
+    author_profile = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     liked_by_me = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'created_at', 'author', 'likes_count', 'comments_count', 'liked_by_me']
+        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'created_at', 'author', 'author_profile', 'is_mine', 'likes_count', 'comments_count', 'liked_by_me']
 
     def get_author(self, obj):
         return obj.user.username
+
+    def get_author_profile(self, obj):
+        profile = getattr(obj.user, 'profile', None)
+        return {
+            'avatar_url': profile.avatar_url if profile else '',
+            'avatar_choice': profile.avatar_choice if profile else 'sun',
+        }
+
+    def get_is_mine(self, obj):
+        user = self.context['request'].user
+        return user.is_authenticated and obj.user_id == user.id
 
     def get_likes_count(self, obj):
         return obj.likes.count()

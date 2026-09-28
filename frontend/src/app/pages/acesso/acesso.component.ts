@@ -99,8 +99,8 @@ export class AcessoComponent {
     const body = this.mode === 'login'
       ? { username: this.email.trim(), password: this.password }
       : { name: this.registerForm.name.trim(), email: this.email.trim(), password: this.password };
-    this.http.post<{ token: string }>(`${this.api}/auth/${endpoint}/`, body).subscribe({
-      next: response => { this.loading = false; localStorage.setItem('cidadania_token', response.token); this.router.navigate(['/postagens']); },
+    this.http.post<{ token: string; user: { username: string } }>(`${this.api}/auth/${endpoint}/`, body).subscribe({
+      next: response => { this.loading = false; localStorage.setItem('cidadania_token', response.token); localStorage.setItem('cidadania_username', response.user.username); this.router.navigate(['/postagens']); },
       error: error => { this.loading = false; this.error = error?.error?.email?.[0] || error?.error?.password?.[0] || error?.error?.detail || 'Não foi possível concluir o acesso. Confira seus dados e tente novamente.'; }
     });
   }

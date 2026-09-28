@@ -122,3 +122,14 @@ class ApiEndpointsTests(APITestCase):
 
         self.assertEqual(like_response.status_code, status.HTTP_200_OK)
         self.assertEqual(comment_response.status_code, status.HTTP_201_CREATED)
+
+    def test_user_cannot_delete_another_users_post(self):
+        other_user = User.objects.create_user(username='outra', email='outra@email.com', password='12345678')
+        post = Post.objects.create(user=other_user, title='Post de outra pessoa', category='Cidadania', content='Conteúdo')
+        login_response = self.client.post(reverse('auth-login'), {'username': 'aluno', 'password': '12345678'}, format='json')
+        response = self.client.delete(
+            reverse('post-detail', args=[post.id]),
+            HTTP_AUTHORIZATION=f"Token {login_response.data['token']}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertTrue(Post.objects.filter(id=post.id).exists())

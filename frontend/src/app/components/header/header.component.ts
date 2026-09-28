@@ -197,6 +197,7 @@ export class HeaderComponent {
 
   private finishLogout(): void {
     localStorage.removeItem('cidadania_token');
+    localStorage.removeItem('cidadania_username');
     this.isLoggedIn = false;
     this.router.navigate(['/acesso']);
   }
