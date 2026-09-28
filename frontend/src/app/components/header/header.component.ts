@@ -38,6 +38,12 @@ import { apiConfig } from '../../api-config';
       </div>
 
       <nav id="main-navigation" class="nav" [class.nav--open]="menuOpen" aria-label="Menu principal">
+        @if (isLoggedIn) {
+          <a routerLink="/perfil" routerLinkActive="active" class="mobile-account-link">Meu perfil</a>
+          <button type="button" class="mobile-logout" (click)="logout()">Sair da conta</button>
+        } @else {
+          <a routerLink="/acesso" routerLinkActive="active" class="mobile-account-link">Entrar / Criar conta</a>
+        }
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
         <a routerLink="/democracia" routerLinkActive="active">Democracia</a>
         <a routerLink="/desinformacao" routerLinkActive="active">Desinformação</a>
@@ -179,6 +185,10 @@ import { apiConfig } from '../../api-config';
       .header-login, .logout-button { display: none; }
       .nav.nav--open { display: grid; grid-template-columns: 1fr 1fr; }
       .nav a { text-align: center; padding: 0.65rem 0.45rem; font-size: 0.9rem; }
+      .nav .mobile-account-link,
+      .nav .mobile-logout { grid-column: span 2; }
+      .nav .mobile-account-link { background: #0d2d6b; color: white; }
+      .mobile-logout { border: 1px solid #cbd9e8; border-radius: 999px; padding: 0.65rem 0.45rem; background: white; color: #173a6d; font: inherit; font-weight: 800; cursor: pointer; }
     }
   `]
 })
