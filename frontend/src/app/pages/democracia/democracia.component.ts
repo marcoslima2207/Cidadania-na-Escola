@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// CONTEUDO: pagina educativa sobre democracia e participacao cidada.
 @Component({
   selector: 'app-democracia',
   standalone: true,

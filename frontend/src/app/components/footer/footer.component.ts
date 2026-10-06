@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// RODAPE: identidade e links institucionais exibidos no fim das paginas.
 @Component({
   selector: 'app-footer',
   standalone: true,

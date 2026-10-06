@@ -7,6 +7,7 @@ from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, U
 User = get_user_model()
 
 
+# AUTENTICAÇÃO: valida credenciais por e-mail ou nome de usuário.
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
@@ -39,6 +40,7 @@ class LoginSerializer(serializers.Serializer):
         return {'token': token.key, 'user': user}
 
 
+# AUTENTICAÇÃO: cria usuário, username derivado do e-mail e token inicial.
 class RegisterSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150)
     email = serializers.EmailField()
@@ -69,6 +71,7 @@ class RegisterSerializer(serializers.Serializer):
         return {'token': token.key, 'user': user}
 
 
+# POSTAGENS: normaliza autor, perfil, likes e comentários para o frontend.
 class PostSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     author_profile = serializers.SerializerMethodField()
@@ -106,6 +109,7 @@ class PostSerializer(serializers.ModelSerializer):
         return user.is_authenticated and obj.likes.filter(user=user).exists()
 
 
+# PERFIL: expõe dados editáveis sem permitir alteração do usuário pelo cliente.
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
@@ -115,6 +119,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'bio', 'avatar_url', 'avatar_choice']
 
 
+# COMENTÁRIOS: impede que autor e postagem sejam falsificados no payload.
 class PostCommentSerializer(serializers.ModelSerializer):
     author = serializers.CharField(source='user.username', read_only=True)
 
@@ -124,6 +129,7 @@ class PostCommentSerializer(serializers.ModelSerializer):
         read_only_fields = ['post']
 
 
+# CONTEÚDO EDUCATIVO.
 class ConteudoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conteudo
@@ -137,6 +143,7 @@ class ConteudoSerializer(serializers.ModelSerializer):
         ]
 
 
+# QUIZ: perguntas.
 class PerguntaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pergunta
@@ -152,6 +159,7 @@ class PerguntaSerializer(serializers.ModelSerializer):
         ]
 
 
+# QUIZ: resultados.
 class ResultadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resultado
@@ -166,6 +174,7 @@ class ResultadoSerializer(serializers.ModelSerializer):
         ]
 
 
+# LEGADO/USUÁRIOS.
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario

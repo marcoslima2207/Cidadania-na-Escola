@@ -8,6 +8,7 @@ from .models import Conteudo, Pergunta, Post, Resultado
 User = get_user_model()
 
 
+# TESTES DE API: conteudo, autenticacao, posts e interacoes sociais.
 class ApiEndpointsTests(APITestCase):
     def setUp(self):
         self.conteudo = Conteudo.objects.create(

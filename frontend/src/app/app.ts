@@ -4,6 +4,7 @@ import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 
+// CASCA DA APLICACAO: header, rota atual e footer.
 @Component({
   selector: 'app-root',
   standalone: true,

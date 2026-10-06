@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// CONTEUDO: pagina educativa sobre checagem de informacao.
 @Component({
   selector: 'app-checagem',
   standalone: true,

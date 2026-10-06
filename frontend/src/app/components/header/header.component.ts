@@ -5,6 +5,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 import { apiConfig } from '../../api-config';
 
+// NAVEGACAO E SESSAO: menu principal, login, perfil e logout.
 @Component({
   selector: 'app-header',
   standalone: true,

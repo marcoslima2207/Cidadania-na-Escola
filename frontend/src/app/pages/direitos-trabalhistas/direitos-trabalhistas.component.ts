@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// CONTEUDO: pagina educativa sobre direitos trabalhistas.
 @Component({
   selector: 'app-direitos-trabalhistas',
   standalone: true,

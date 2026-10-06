@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 
+# POSTAGENS: conteúdo publicado pelos usuários.
 class Post(models.Model):
     CATEGORY_CHOICES = [
         ('Direitos Trabalhistas', 'Direitos Trabalhistas'),
@@ -29,6 +30,7 @@ class Post(models.Model):
         return self.title
 
 
+# PERFIL: preferências públicas e avatar do usuário.
 class Profile(models.Model):
     AVATAR_CHOICES = [
         ('sun', 'Sol'),
@@ -46,6 +48,7 @@ class Profile(models.Model):
         return f'Perfil de {self.user.username}'
 
 
+# INTERAÇÕES: registro único de curtida por usuário e postagem.
 class PostLike(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_likes')
@@ -55,6 +58,7 @@ class PostLike(models.Model):
         constraints = [models.UniqueConstraint(fields=['post', 'user'], name='unique_post_like')]
 
 
+# INTERAÇÕES: comentários vinculados a uma postagem e a um autor.
 class PostComment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='post_comments')
@@ -62,6 +66,7 @@ class PostComment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+# CONTEÚDO EDUCATIVO: materiais organizados por tema.
 class Conteudo(models.Model):
     CATEGORIAS = [
         ('democracia', 'Democracia e Cidadania'),
@@ -80,6 +85,7 @@ class Conteudo(models.Model):
         return self.titulo
 
 
+# QUIZ: perguntas de múltipla escolha usadas pela API.
 class Pergunta(models.Model):
     CATEGORIAS = [
         ('democracia', 'Democracia e Cidadania'),
@@ -100,6 +106,7 @@ class Pergunta(models.Model):
         return self.enunciado
 
 
+# QUIZ: resultados registrados após uma tentativa.
 class Resultado(models.Model):
     nome = models.CharField(max_length=120, blank=True, default='Anônimo')
     pontuacao = models.IntegerField(default=0)
@@ -112,6 +119,7 @@ class Resultado(models.Model):
         return f'{self.nome} - {self.pontuacao}/{self.total_perguntas}'
 
 
+# LEGADO/USUÁRIOS: modelo público auxiliar mantido pela API.
 class Usuario(models.Model):
     nome = models.CharField(max_length=120)
     email = models.EmailField(unique=True)

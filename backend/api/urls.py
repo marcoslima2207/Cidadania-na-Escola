@@ -7,6 +7,7 @@ from .views import AuthViewSet, ConteudoViewSet, PerguntaViewSet, PostViewSet, R
 
 router = DefaultRouter()
 
+# ROTAS DA API: o router gera listagem, detalhe e ações customizadas.
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'conteudos', ConteudoViewSet, basename='conteudo')
 router.register(r'perguntas', PerguntaViewSet, basename='pergunta')

@@ -6,6 +6,7 @@ import { RouterLink } from '@angular/router';
 
 import { apiConfig } from '../../api-config';
 
+// HOME: apresentacao da plataforma, carrossel e chamada para o quiz.
 type PostTheme = 'justice' | 'education' | 'fake-news';
 
 type FeedMediaType = 'image' | 'video';

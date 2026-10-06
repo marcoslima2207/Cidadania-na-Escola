@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+// API DE CONTEUDO: acesso aos materiais educativos.
 export interface Conteudo {
   id?: number;
   titulo: string;

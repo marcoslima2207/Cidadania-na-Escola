@@ -20,6 +20,7 @@ from .serializers import (
 )
 
 
+# AUTENTICAÇÃO: login, logout e perfil do usuário atual.
 class AuthViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='login')
     def login(self, request):
@@ -57,6 +58,7 @@ class AuthViewSet(viewsets.ViewSet):
         )
 
 
+# POSTAGENS: leitura pública; criação, interação e exclusão exigem token.
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
     serializer_class = PostSerializer
@@ -94,21 +96,25 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(PostCommentSerializer(post.comments.select_related('user').order_by('created_at'), many=True).data)
 
 
+# CONTEÚDO EDUCATIVO.
 class ConteudoViewSet(viewsets.ModelViewSet):
     queryset = Conteudo.objects.all().order_by('-data_publicacao')
     serializer_class = ConteudoSerializer
 
 
+# QUIZ: banco de perguntas.
 class PerguntaViewSet(viewsets.ModelViewSet):
     queryset = Pergunta.objects.all().order_by('id')
     serializer_class = PerguntaSerializer
 
 
+# QUIZ: resultados enviados pelo frontend.
 class ResultadoViewSet(viewsets.ModelViewSet):
     queryset = Resultado.objects.all().order_by('-criado_em')
     serializer_class = ResultadoSerializer
 
 
+# LEGADO/USUÁRIOS.
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all().order_by('id')
     serializer_class = UsuarioSerializer

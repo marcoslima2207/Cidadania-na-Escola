@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # DEPLOY: compila o Angular e publica o artefato no GitHub Pages.
       - name: Checkout
         uses: actions/checkout@v4
 

@@ -8,6 +8,7 @@ import { apiConfig } from '../../api-config';
 
 interface Profile { username: string; email: string; bio: string; avatar_url: string; avatar_choice: string; }
 
+// PERFIL: consulta e edicao de bio, foto ou avatar ilustrativo.
 @Component({
   selector: 'app-perfil',
   standalone: true,

@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { apiConfig } from '../../api-config';
 
+// AUTENTICACAO: formulario de login e criacao de conta.
 @Component({
   selector: 'app-acesso',
   standalone: true,

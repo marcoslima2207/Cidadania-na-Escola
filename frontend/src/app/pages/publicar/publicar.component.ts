@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 
 import { apiConfig } from '../../api-config';
 
+// PUBLICAR: formulario autenticado para criar foto, video ou texto.
 @Component({
   selector: 'app-publicar', standalone: true, imports: [CommonModule, FormsModule],
   template: `<main class="publish-page"><section class="publish-card"><p class="eyebrow">Nova publicação</p><h1>Compartilhe uma ideia que transforma.</h1><p class="lead">Publique fotos, vídeos e reflexões sobre cidadania, democracia e informação.</p><div class="form"><label>Categoria<select [(ngModel)]="form.category"><option>Direitos Trabalhistas</option><option>Democracia</option><option>Cidadania</option><option>Desinformação</option><option>Educação</option></select></label><label>Tipo<select [(ngModel)]="form.media_type"><option value="image">Foto</option><option value="video">Vídeo</option></select></label><label>Título<input [(ngModel)]="form.title" placeholder="Dê um título à publicação" /></label><label>Texto<textarea [(ngModel)]="form.content" rows="6" placeholder="Escreva sua publicação"></textarea></label><label>Link da mídia (opcional)<input [(ngModel)]="form.media_url" placeholder="https://..." /></label><button type="button" (click)="publish()" [disabled]="loading">{{ loading ? 'Publicando...' : 'Publicar agora' }}</button>@if(error){<p class="error">{{ error }}</p>}</div></section></main>`,

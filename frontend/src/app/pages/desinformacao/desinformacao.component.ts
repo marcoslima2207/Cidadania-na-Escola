@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// CONTEUDO: pagina educativa sobre desinformacao.
 @Component({
   selector: 'app-desinformacao',
   standalone: true,

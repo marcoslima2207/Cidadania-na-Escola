@@ -9,6 +9,7 @@ interface Question {
   correct: string;
 }
 
+// QUIZ: perguntas, progresso, pontuacao e resultado final.
 @Component({
   selector: 'app-quiz',
   standalone: true,

@@ -1,4 +1,5 @@
 services:
+  # DEPLOY API: serviço Django executado pelo Render.
   - type: web
     name: cidadania-na-escola-api
     runtime: python
@@ -37,5 +38,6 @@ services:
         value: https://marcoslima2207.github.io
 
 databases:
+  # BANCO: PostgreSQL para manter usuários, posts, likes e comentários.
   - name: cidadania-na-escola-db
     plan: free

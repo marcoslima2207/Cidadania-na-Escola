@@ -13,6 +13,7 @@ import { PostagensComponent } from './pages/postagens/postagens.component';
 import { PublicarComponent } from './pages/publicar/publicar.component';
 
 export const routes: Routes = [
+  // CONTEÚDO PÚBLICO: páginas educativas e quiz.
   { path: '', component: HomeComponent },
   { path: 'democracia', component: DemocraciaComponent },
   { path: 'desinformacao', component: DesinformacaoComponent },
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'direitos-trabalhistas', component: DireitosTrabalhistasComponent },
   { path: 'quiz', component: QuizComponent },
   { path: 'sobre', component: SobreComponent },
+  // COMUNIDADE: acesso, perfil, publicações e criação de posts.
   { path: 'acesso', component: AcessoComponent },
   { path: 'perfil', component: PerfilComponent },
   { path: 'postagens', component: PostagensComponent },

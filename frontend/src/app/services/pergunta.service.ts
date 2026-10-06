@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+// API DO QUIZ: acesso as perguntas cadastradas no backend.
 export interface Pergunta {
   id?: number;
   enunciado: string;

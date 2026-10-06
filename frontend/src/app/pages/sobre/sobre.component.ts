@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 
+// INSTITUCIONAL: missao, visao e valores do projeto.
 @Component({
   selector: 'app-sobre',
   standalone: true,
