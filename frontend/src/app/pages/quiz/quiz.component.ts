@@ -1,7 +1,9 @@
+// Executa o quiz local de múltipla escolha, calcula a pontuação e permite recomeçar.
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+// Define o formato dos dados de Question para conferir os tipos usados pela interface.
 interface Question {
   id: number;
   question: string;
@@ -13,7 +15,9 @@ interface Question {
 @Component({
   selector: 'app-quiz',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, FormsModule],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <section class="quiz">
       <div class="quiz__header">
@@ -67,6 +71,7 @@ interface Question {
       }
     </section>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     :host { display: block; }
     .quiz {
@@ -187,6 +192,7 @@ interface Question {
   `]
 })
 export class QuizComponent {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   questions: Question[] = [
     {
       id: 1,
@@ -310,19 +316,23 @@ export class QuizComponent {
     }
   ];
 
+  // Estado da tentativa: posição, resposta escolhida, quantidade de acertos e conclusão.
   currentIndex = 0;
   selectedAnswer = '';
   score = 0;
   finished = false;
 
+  // Retorna a pergunta correspondente à posição atual do quiz.
   get currentQuestion(): Question {
     return this.questions[this.currentIndex];
   }
 
+  // Indica se a pontuação atingiu pelo menos 70% das perguntas do quiz.
   get passed(): boolean {
     return this.score >= Math.ceil(this.questions.length * 0.7);
   }
 
+  // Confere a resposta escolhida, soma os acertos e avança até finalizar o quiz.
   submitAnswer(): void {
     if (!this.selectedAnswer) return;
 
@@ -338,6 +348,7 @@ export class QuizComponent {
     }
   }
 
+  // Zera pontuação, resposta e posição para iniciar uma nova tentativa.
   restartQuiz(): void {
     this.currentIndex = 0;
     this.selectedAnswer = '';

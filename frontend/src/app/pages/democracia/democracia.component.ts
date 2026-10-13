@@ -1,9 +1,11 @@
+// Apresenta conteúdo educativo sobre democracia, participação e cidadania.
 import { Component } from '@angular/core';
 
 // CONTEUDO: pagina educativa sobre democracia e participacao cidada.
 @Component({
   selector: 'app-democracia',
   standalone: true,
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <section class="page page--democracia">
       <header class="page__header">
@@ -33,6 +35,7 @@ import { Component } from '@angular/core';
       </div>
     </section>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     :host { display: block; }
     .page {

@@ -1,3 +1,4 @@
+# Expõe a aplicação Django pelo protocolo ASGI para servidores compatíveis.
 """
 ASGI config for config project.
 

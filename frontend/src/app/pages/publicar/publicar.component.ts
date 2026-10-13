@@ -1,3 +1,4 @@
+// Monta a publicação, apresenta a prévia do arquivo e envia texto e mídia para a API.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy } from '@angular/core';
@@ -10,7 +11,9 @@ import { apiConfig } from '../../api-config';
 @Component({
   selector: 'app-publicar',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, FormsModule, RouterLink],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `<main class="publish-page">
     <section class="publish-card">
       <p class="eyebrow">Nova publicação</p>
@@ -77,6 +80,7 @@ import { apiConfig } from '../../api-config';
       </div>
     </section>
   </main>`,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [
     `
       :host {
@@ -193,25 +197,31 @@ import { apiConfig } from '../../api-config';
   ],
 })
 export class PublicarComponent implements OnDestroy {
+  // Indica se existe um token no navegador; a API confirma sua validade em cada requisição.
   get loggedIn(): boolean { return !!localStorage.getItem('cidadania_token'); }
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   form = { category: 'Cidadania', media_type: 'image', title: '', content: '', media_url: '' };
   selectedFile: File | null = null;
   error = '';
   loading = false;
   private readonly api = apiConfig.baseUrl;
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(
     private http: HttpClient,
     private router: Router,
   ) {}
   previewUrl = '';
+  // Revoga a URL temporária da prévia e limpa a referência ao arquivo selecionado.
   clearMedia(): void {
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
     this.previewUrl = '';
     this.selectedFile = null;
   }
+  // Libera a prévia do arquivo quando o Angular remove a página.
   ngOnDestroy(): void {
     this.clearMedia();
   }
+  // Verifica o formato e o limite de 20 MB e cria uma URL temporária para a prévia.
   selectMedia(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -228,8 +238,10 @@ export class PublicarComponent implements OnDestroy {
       return;
     }
     this.selectedFile = file;
+    // A prévia usa uma URL do navegador; o upload só ocorre ao clicar em publicar.
     this.previewUrl = URL.createObjectURL(file);
   }
+  // Valida sessão e campos, monta FormData e envia o post com o arquivo ao backend.
   publish(): void {
     this.error = '';
     const token = localStorage.getItem('cidadania_token');
@@ -242,6 +254,8 @@ export class PublicarComponent implements OnDestroy {
       return;
     }
     this.loading = true;
+    // FormData transporta texto e bytes no mesmo pedido multipart.
+    // O navegador define o Content-Type e seu separador automaticamente.
     const payload = new FormData();
     payload.append('category', this.form.category);
     payload.append('media_type', this.form.media_type);

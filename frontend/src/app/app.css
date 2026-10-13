@@ -1,3 +1,4 @@
+/* Estilos auxiliares de identidade visual; o componente App atual utiliza estilos inline em app.ts. */
 .page-shell {
   min-height: 100vh;
   background: #e9e3de;
@@ -58,6 +59,7 @@
   max-width: 1280px;
   margin: 0 auto;
 }
+/* Seção de amostras de cor e cartões da identidade visual. */
 .palette-section {
   padding: 18px 24px 24px;
 }
@@ -109,6 +111,7 @@
   background: #fffdf9;
   color: #0b315d;
 }
+/* Apresentação da proposta e ilustração construída com formas CSS. */
 .proposal-section {
   padding: 10px 0;
 }
@@ -229,6 +232,7 @@
   border-radius: 50% 50% 42% 42% / 100% 100% 0 0;
   background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(203, 209, 214, .9));
 }
+/* Grades de informações: organizam objetivos e regras em cartões. */
 .focus-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(200px, 1fr));
@@ -376,6 +380,7 @@
   top: 24px;
   border-color: #0a2d6c transparent transparent transparent;
 }
+/* Modelos de cartões para apresentação visual de conteúdos sociais. */
 .social-section {
   padding: 18px 24px 8px;
 }
@@ -492,6 +497,7 @@
 .suggestion-line.short {
   width: 70%;
 }
+/* Telas intermediárias: distribui os cartões em duas colunas. */
 @media (max-width: 960px) {
   .proposal-header, .color-columns, .brand-specs, .focus-grid, .social-grid, .rules-grid {
     grid-template-columns: 1fr 1fr;
@@ -503,6 +509,7 @@
     min-height: 260px;
   }
 }
+/* Celulares: usa uma coluna e reduz espaçamentos para caber na largura disponível. */
 @media (max-width: 700px) {
   .page-shell {
     padding: 18px 10px 26px;

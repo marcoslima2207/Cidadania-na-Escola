@@ -1,3 +1,4 @@
+// Pesquisa palavras nos posts e apresenta definições do glossário e atalhos para os assuntos.
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
@@ -6,6 +7,7 @@ import { RouterLink } from '@angular/router';
 
 import { apiConfig } from '../../api-config';
 
+// Define o formato dos dados de SearchPost para conferir os tipos usados pela interface.
 interface SearchPost {
   id: number;
   author: string;
@@ -20,7 +22,9 @@ interface SearchPost {
 @Component({
   selector: 'app-buscar',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, FormsModule, RouterLink],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <main class="search-page">
       <section class="search-hero">
@@ -101,6 +105,7 @@ interface SearchPost {
       }
     </main>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [
     `
       :host {
@@ -265,6 +270,7 @@ interface SearchPost {
   ],
 })
 export class BuscarComponent {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   term = '';
   searched = false;
   results: SearchPost[] = [];
@@ -272,6 +278,7 @@ export class BuscarComponent {
   searchedTerm = '';
   loading = false;
   error = '';
+  // Cada busca recebe um número; respostas atrasadas não substituem a busca mais recente.
   private requestId = 0;
   topics = [
     { label: 'Democracia e cidadania', path: '/democracia' },
@@ -280,6 +287,7 @@ export class BuscarComponent {
     { label: 'Direitos trabalhistas', path: '/direitos-trabalhistas' },
   ];
   private readonly api = apiConfig.baseUrl;
+  // Glossário local com chaves sem acentos; termos ausentes recebem um aviso no template.
   private readonly meanings: Record<string, string> = {
     cidadania:
       'Participação ativa na sociedade, com direitos, deveres e responsabilidade coletiva.',
@@ -297,13 +305,16 @@ export class BuscarComponent {
       'Direito de fazer escolhas e expressar ideias respeitando os direitos das outras pessoas.',
   };
 
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(private http: HttpClient) {}
 
+  // Preenche o campo com o assunto escolhido e inicia a pesquisa correspondente.
   searchTopic(term: string): void {
     this.term = term;
     this.search();
   }
 
+  // Pesquisa na API e atualiza definição e resultados; ignora respostas de pesquisas anteriores.
   search(): void {
     const term = this.term.trim();
     if (!term) {

@@ -1,3 +1,4 @@
+# Distribui as requisições entre administração Django, endpoints da API e arquivos de mídia.
 from django.contrib import admin
 from django.urls import include, path
 

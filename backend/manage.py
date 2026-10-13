@@ -4,6 +4,7 @@ import os
 import sys
 
 
+# Seleciona as configurações do projeto e entrega os argumentos do terminal ao gerenciador Django.
 def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')

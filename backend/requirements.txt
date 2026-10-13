@@ -1,5 +1,10 @@
+# Framework do backend: modelos, migrações, autenticação e servidor da aplicação.
 Django>=6.1,<6.2
+# Cria endpoints REST e valida dados por meio dos serializers.
 djangorestframework>=3.16,<4
+# Permite controlar quais origens do frontend acessam a API no navegador.
 django-cors-headers>=4.9,<5
+# Servidor WSGI usado para executar o Django no Render.
 gunicorn>=23,<24
+# Driver de conexão ao PostgreSQL, com distribuição binária das dependências.
 psycopg[binary]>=3.2,<4

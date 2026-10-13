@@ -1,3 +1,4 @@
+# Configura segurança, aplicativos, banco de dados, arquivos, autenticação e acesso do frontend à API.
 """
 Django settings for config project.
 
@@ -20,8 +21,10 @@ SECRET_KEY = os.getenv(
     'django-insecure-chave-apenas-para-desenvolvimento'
 )
 
+# Lê a variável de ambiente como texto e converte para booleano; em produção use False.
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
+# Hosts que podem chegar ao Django, separados por vírgula na configuração do serviço.
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
 
@@ -30,6 +33,7 @@ ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(
 # ============================================================
 
 INSTALLED_APPS = [
+    # Recursos administrativos do Django, API REST, tokens, CORS e código do projeto.
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,6 +52,7 @@ INSTALLED_APPS = [
 # ============================================================
 
 MIDDLEWARE = [
+    # Processa cada requisição em ordem, incluindo segurança, CORS, sessão e autenticação.
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -107,6 +112,8 @@ else:
     }
 
 
+# Regras disponíveis aos fluxos que chamam a validação de senha do Django.
+# O serializer de cadastro da API aplica seu próprio limite mínimo de oito caracteres.
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -115,16 +122,20 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Idioma das mensagens padrão e fuso usado pelo projeto para apresentar datas.
 LANGUAGE_CODE = 'pt-br'
 TIME_ZONE = 'America/Sao_Paulo'
 USE_I18N = True
 USE_TZ = True
 
+# Arquivos estáticos são recursos da aplicação; mídia são arquivos enviados pelas pessoas.
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
+# Permite apontar os uploads para um volume persistente no serviço de produção.
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
 REST_FRAMEWORK = {
+    # Primeiro aceita Authorization: Token; também permite sessões Django autenticadas.
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
@@ -134,6 +145,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+# Origens do frontend autorizadas a fazer chamadas à API pelo navegador.
 CORS_ALLOWED_ORIGINS = [
     origin.strip()
     for origin in os.getenv(
@@ -143,6 +155,7 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
+# Exibe e-mails no console; esta configuração não envia mensagens por um provedor real.
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

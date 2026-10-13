@@ -1,16 +1,20 @@
+# Compila o frontend e publica o resultado no GitHub Pages.
 name: Deploy Angular to GitHub Pages
 
+# Executa quando há push na main ou quando o workflow é iniciado manualmente.
 on:
   push:
     branches:
       - main
   workflow_dispatch:
 
+# Permissões necessárias para ler o repositório e publicar no Pages.
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# Cancela a execução anterior de Pages se chegar uma publicação mais recente.
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -34,23 +38,28 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # npm ci usa as versões exatas registradas no package-lock.json.
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
 
+      # O endereço base inclui o nome do repositório, usado no GitHub Pages.
       - name: Build Angular app
         working-directory: frontend
         run: npm run build -- --base-href /Cidadania-na-Escola/
 
+      # Permite carregar diretamente uma rota Angular quando o Pages procura uma página 404.
       - name: Add SPA fallback
         run: cp frontend/dist/frontend/browser/index.html frontend/dist/frontend/browser/404.html
 
+      # Disponibiliza os arquivos compilados para o job de publicação.
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist/frontend/browser
 
   deploy:
+    # Publica somente depois que o job build termina com sucesso.
     needs: build
     runs-on: ubuntu-latest
 

@@ -1,8 +1,10 @@
+// Configuração comum: ativa verificações estritas de tipos e templates para todos os projetos TypeScript.
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "compileOnSave": false,
   "compilerOptions": {
+    // Exige tipos mais precisos e detecta erros comuns antes de executar o frontend.
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -12,16 +14,19 @@
     "isolatedModules": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    // Versão do JavaScript produzida pelo compilador e tratamento dos módulos.
     "target": "ES2022",
     "module": "preserve"
   },
   "angularCompilerOptions": {
+    // Confere também os dados, as injeções e as expressões usadas nos templates HTML.
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true
   },
   "files": [],
+  // Separa a compilação da aplicação da compilação dos testes.
   "references": [
     {
       "path": "./tsconfig.app.json"

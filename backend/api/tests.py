@@ -1,3 +1,4 @@
+# Verifica os contratos da API usando banco e pasta de mídia temporários, sem alterar os dados reais.
 from django.contrib.auth import get_user_model
 import base64
 import tempfile
@@ -7,15 +8,18 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Conteudo, Pergunta, Post, Resultado
+from .models import Conteudo, Pergunta, Post, Profile, Resultado
 
 User = get_user_model()
 
 
 # TESTES DE API: conteudo, autenticacao, posts e interacoes sociais.
+# Usa um hash rápido somente neste conjunto de testes; não altera as senhas em produção.
 @override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ApiEndpointsTests(APITestCase):
+    # Prepara mídia temporária, conteúdo, pergunta e usuário para cada teste independente.
     def setUp(self):
+        # Uploads de teste ficam isolados e são removidos automaticamente após cada caso.
         self.media_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.media_dir.cleanup)
         media_settings = override_settings(MEDIA_ROOT=self.media_dir.name)
@@ -41,11 +45,13 @@ class ApiEndpointsTests(APITestCase):
             password='12345678'
         )
 
+    # Confere se os materiais educativos podem ser consultados.
     def test_list_conteudos(self):
         response = self.client.get(reverse('conteudo-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
 
+    # Confere o cadastro de um conteúdo e a inclusão de um registro no banco.
     def test_create_conteudo(self):
         payload = {
             'titulo': 'Direitos trabalhistas',
@@ -57,11 +63,13 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Conteudo.objects.count(), 2)
 
+    # Confere se a API retorna as perguntas cadastradas.
     def test_list_perguntas(self):
         response = self.client.get(reverse('pergunta-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
 
+    # Confere o registro de pontuação e respostas de uma tentativa do quiz.
     def test_create_resultado(self):
         payload = {
             'nome': 'Aluno',
@@ -74,6 +82,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Resultado.objects.count(), 1)
 
+    # Confere se credenciais válidas devolvem um token de acesso.
     def test_login_returns_token(self):
         response = self.client.post(
             reverse('auth-login'),
@@ -83,6 +92,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
 
+    # Confere a criação da conta e a emissão de seu token inicial.
     def test_register_creates_user_and_returns_token(self):
         response = self.client.post(
             reverse('auth-register'),
@@ -93,6 +103,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertIn('token', response.data)
         self.assertTrue(User.objects.filter(email='nova@email.com').exists())
 
+    # Confere o cadastro de um post usando um token válido.
     def test_create_post_requires_auth(self):
         login_response = self.client.post(
             reverse('auth-login'),
@@ -117,6 +128,7 @@ class ApiEndpointsTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    # Confere o upload multipart de uma imagem e o endereço retornado pela API.
     def test_create_post_with_real_media_upload(self):
         login_response = self.client.post(
             reverse('auth-login'),
@@ -141,6 +153,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertTrue(uploaded_post.media_file.name)
         self.assertIn('/media/posts/', response.data['media_url'])
 
+    # Confere a criação de curtida e comentário usando uma sessão autenticada.
     def test_post_like_and_comment(self):
         post = Post.objects.create(
             user=self.user,
@@ -158,6 +171,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(like_response.status_code, status.HTTP_200_OK)
         self.assertEqual(comment_response.status_code, status.HTTP_201_CREATED)
 
+    # Confere se a API impede excluir o post de outra pessoa.
     def test_user_cannot_delete_another_users_post(self):
         other_user = User.objects.create_user(username='outra', email='outra@email.com', password='12345678')
         post = Post.objects.create(user=other_user, title='Post de outra pessoa', category='Cidadania', content='Conteúdo')
@@ -169,6 +183,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Post.objects.filter(id=post.id).exists())
 
+    # Confere se a API impede editar o post de outra pessoa.
     def test_other_author_cannot_edit_post(self):
         other = User.objects.create_user(username='professor', password='12345678')
         post = Post.objects.create(user=other, title='Original', category='Cidadania', content='Texto')
@@ -178,6 +193,7 @@ class ApiEndpointsTests(APITestCase):
         post.refresh_from_db()
         self.assertEqual(post.title, 'Original')
 
+    # Confere busca sem acentos e maiúsculas e a combinação com categoria.
     def test_search_and_category_filters(self):
         Post.objects.create(user=self.user, title='Educação cidadã', category='Educação', content='Participação')
         Post.objects.create(user=self.user, title='Outro assunto', category='Democracia', content='Eleições')
@@ -186,6 +202,7 @@ class ApiEndpointsTests(APITestCase):
         response = self.client.get(reverse('post-list'), {'search': 'participacao', 'category': 'Democracia'})
         self.assertEqual(response.data, [])
 
+    # Confere leitura pública, autenticação para reagir e remoção da curtida.
     def test_public_comments_and_authenticated_reaction_state(self):
         other = User.objects.create_user(username='outro', password='12345678')
         post = Post.objects.create(user=other, title='Discussão', category='Cidadania', content='Texto')
@@ -201,6 +218,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertFalse(response.data['liked'])
         self.assertEqual(response.data['likes_count'], 0)
 
+    # Confere a rejeição de arquivo vazio, formato proibido, assinatura falsa e tamanho excessivo.
     def test_upload_validation(self):
         self.client.force_authenticate(self.user)
         payload = {'title': 'Arquivo', 'content': 'Texto', 'category': 'Cidadania'}
@@ -212,6 +230,7 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Post.objects.count(), 0)
 
+    # Confere upload de vídeo, leitura parcial e bloqueio de acesso fora da pasta de mídia.
     def test_video_upload_and_media_download(self):
         self.client.force_authenticate(self.user)
         content = b'\x00\x00\x00\x18ftypmp42' + b'\x00' * 20
@@ -229,8 +248,63 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(invalid.status_code, 416)
         self.assertEqual(self.client.get('/media/../config/settings.py').status_code, 404)
 
+    # Confere a compatibilidade das publicações antigas que usam uma URL externa.
     def test_external_media_link_is_preserved(self):
         self.client.force_authenticate(self.user)
         response = self.client.post(reverse('post-list'), {'title': 'Legado', 'content': 'Texto', 'category': 'Cidadania', 'media_url': 'https://example.com/foto.jpg'}, format='json')
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['media_url'], 'https://example.com/foto.jpg')
+
+    # A foto do perfil é gravada e usada também nas publicações do seu autor.
+    def test_profile_upload_is_displayed_in_community(self):
+        self.client.force_authenticate(self.user)
+        photo = SimpleUploadedFile('foto.jfif', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        response = self.client.patch(reverse('auth-profile'), {'bio': 'Minha bio', 'avatar_file': photo}, format='multipart')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data['avatar_file_url'].startswith('http://testserver/media/avatars/'))
+        self.assertNotIn('avatar_file', response.data)
+        self.assertEqual(response.data['bio'], 'Minha bio')
+        Post.objects.create(user=self.user, title='Post', category='Cidadania', content='Texto')
+        feed = self.client.get(reverse('post-list'))
+        self.assertEqual(feed.data[0]['author_profile']['avatar_url'], response.data['avatar_file_url'])
+
+    # Escolher uma ilustração precisa substituir a foto antiga em vez de ficar escondida por ela.
+    def test_profile_illustration_replaces_photo_and_preserves_account(self):
+        self.client.force_authenticate(self.user)
+        photo = SimpleUploadedFile('foto.jpg', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        self.client.patch(reverse('auth-profile'), {'avatar_file': photo}, format='multipart')
+        old_file = Profile.objects.get(user=self.user).avatar_file
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.patch(reverse('auth-profile'), {'avatar_choice': 'portrait07', 'username': 'fraude', 'email': 'fraude@example.com'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['avatar_file_url'], '')
+        self.assertEqual(response.data['avatar_url'], '')
+        self.assertEqual(response.data['avatar_choice'], 'portrait07')
+        self.assertFalse(old_file.storage.exists(old_file.name))
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, 'aluno')
+
+    # Valida autenticação, tipos de imagem, tamanho máximo e remoção das escolhas antigas.
+    def test_profile_upload_validation_and_choices(self):
+        self.assertEqual(self.client.patch(reverse('auth-profile'), {'bio': 'Não autorizado'}, format='json').status_code, 401)
+        self.client.force_authenticate(self.user)
+        for name, data, mime in [('arquivo.svg', b'<svg/>', 'image/svg+xml'), ('falso.png', b'<html/>', 'image/png'), ('vazio.jpg', b'', 'image/jpeg'), ('grande.jpg', b'\xff\xd8\xff' + b'0' * (5 * 1024 * 1024), 'image/jpeg')]:
+            response = self.client.patch(reverse('auth-profile'), {'avatar_file': SimpleUploadedFile(name, data, content_type=mime)}, format='multipart')
+            self.assertEqual(response.status_code, 400)
+        for old in ['sun', 'leaf', 'star', 'book']:
+            self.assertEqual(self.client.patch(reverse('auth-profile'), {'avatar_choice': old}, format='json').status_code, 400)
+        for choice, _ in Profile.AVATAR_CHOICES:
+            response = self.client.patch(reverse('auth-profile'), {'avatar_choice': choice}, format='json')
+            self.assertEqual(response.status_code, 200)
+
+    # Atualizar somente a bio mantém a foto; um link escolhido depois substitui o upload.
+    def test_profile_bio_preserves_photo_and_url_replaces_upload(self):
+        self.client.force_authenticate(self.user)
+        photo = SimpleUploadedFile('foto.jpg', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        uploaded = self.client.patch(reverse('auth-profile'), {'avatar_file': photo}, format='multipart')
+        bio = self.client.patch(reverse('auth-profile'), {'bio': 'Bio atualizada'}, format='json')
+        self.assertEqual(bio.data['avatar_file_url'], uploaded.data['avatar_file_url'])
+        response = self.client.patch(reverse('auth-profile'), {'avatar_url': 'https://example.com/foto.jpg'}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['avatar_file_url'], '')
+        self.assertEqual(response.data['avatar_url'], 'https://example.com/foto.jpg')

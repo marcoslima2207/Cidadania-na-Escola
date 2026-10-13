@@ -1,3 +1,4 @@
+# Implementa os endpoints da API, as permissões de escrita, a busca e o envio de mídia.
 from pathlib import Path
 import unicodedata
 import mimetypes
@@ -28,23 +29,28 @@ from .serializers import (
 
 
 # MIDIA: serve arquivos enviados sem permitir acesso fora de MEDIA_ROOT.
+# Entrega arquivos dentro de MEDIA_ROOT e atende pedidos parciais de bytes dos vídeos.
 def serve_uploaded_media(request, path):
+    # Resolve o caminho completo antes de abrir o arquivo para bloquear saída da pasta de mídia.
     media_root = Path(settings.MEDIA_ROOT).resolve()
     requested_file = (media_root / path).resolve()
     if media_root not in requested_file.parents or not requested_file.is_file():
         raise Http404
     size = requested_file.stat().st_size
+    # Navegadores usam Range para carregar partes do vídeo e avançar na reprodução.
     range_header = request.headers.get('Range')
     if range_header:
         match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header)
         if not match or not any(match.groups()):
             return HttpResponse(status=416, headers={'Content-Range': f'bytes */{size}'})
+        # Aceita início/fim, trecho até o final ou os últimos N bytes do arquivo.
         first, last = match.groups()
         start = int(first) if first else max(0, size - int(last))
         end = min(int(last), size - 1) if first and last else size - 1
         if start >= size or start > end:
             return HttpResponse(status=416, headers={'Content-Range': f'bytes */{size}'})
 
+        # Lê somente o trecho solicitado em blocos de até 64 KB e fecha o arquivo ao terminar.
         def chunks():
             with requested_file.open('rb') as stream:
                 stream.seek(start)
@@ -56,6 +62,7 @@ def serve_uploaded_media(request, path):
                     remaining -= len(chunk)
                     yield chunk
 
+        # 206 indica conteúdo parcial; Content-Range informa qual trecho foi entregue.
         response = StreamingHttpResponse(chunks(), status=206, content_type=mimetypes.guess_type(requested_file.name)[0] or 'application/octet-stream')
         response['Content-Range'] = f'bytes {start}-{end}/{size}'
         response['Content-Length'] = end - start + 1
@@ -68,6 +75,7 @@ def serve_uploaded_media(request, path):
 # AUTENTICAÇÃO: login, logout e perfil do usuário atual.
 class AuthViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='login')
+    # Valida as credenciais, garante o perfil e devolve token e dados básicos do usuário.
     def login(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -77,20 +85,23 @@ class AuthViewSet(viewsets.ViewSet):
         return Response({'token': token.key, 'user': {'id': user.id, 'username': user.username, 'email': user.email}})
 
     @action(detail=False, methods=['post'], url_path='logout', permission_classes=[IsAuthenticated])
+    # Apaga o token do usuário autenticado para impedir seu uso em novas requisições.
     def logout(self, request):
         Token.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get', 'patch'], url_path='profile', permission_classes=[IsAuthenticated])
+    # Consulta o perfil atual ou valida e salva seus campos editáveis em uma requisição PATCH.
     def profile(self, request):
         profile, _ = Profile.objects.get_or_create(user=request.user)
         if request.method == 'PATCH':
-            serializer = ProfileSerializer(profile, data=request.data, partial=True)
+            serializer = ProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
             serializer.is_valid(raise_exception=True)
             serializer.save()
-        return Response(ProfileSerializer(profile).data)
+        return Response(ProfileSerializer(profile, context={'request': request}).data)
 
     @action(detail=False, methods=['post'], url_path='register')
+    # Valida o cadastro, cria usuário e perfil e retorna a sessão inicial com status 201.
     def register(self, request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -105,10 +116,12 @@ class AuthViewSet(viewsets.ViewSet):
 
 # POSTAGENS: leitura pública; criação, interação e exclusão exigem token.
 class PostViewSet(viewsets.ModelViewSet):
+    # Carrega autor, perfil e interações junto aos posts para reduzir consultas repetidas.
     queryset = Post.objects.select_related('user', 'user__profile').prefetch_related('likes', 'comments').order_by('-created_at', '-id')
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
+    # Permite leitura pública e exige autenticação nas ações que modificam a comunidade.
     def get_permissions(self):
         if self.action == 'comments' and self.request.method == 'GET':
             return [AllowAny()]
@@ -116,18 +129,22 @@ class PostViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [AllowAny()]
 
+    # Associa o novo post ao usuário da requisição, sem aceitar um autor fornecido pelo cliente.
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    # Aplica os filtros de palavra e categoria apenas à listagem de posts.
     def get_queryset(self):
         queryset = super().get_queryset()
         if self.action == 'list':
             term = self.request.query_params.get('search', '').strip()
             category = self.request.query_params.get('category', '').strip()
             if term:
+                # Remove diferenças de acentos e de maiúsculas para comparar termos da busca.
                 def normalize(value):
                     return ''.join(c for c in unicodedata.normalize('NFD', value.casefold()) if not unicodedata.combining(c))
                 normalized_term = normalize(term)
+                # Compara os textos normalizados no Python, incluindo bancos sem busca sem acentos.
                 matching_ids = [
                     row['id'] for row in queryset.values('id', 'title', 'content', 'category')
                     if normalized_term in normalize(' '.join([row['title'], row['content'], row['category']]))
@@ -137,17 +154,20 @@ class PostViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(category=category)
         return queryset
 
+    # Recusa alterações de outro autor e salva apenas as atualizações permitidas.
     def perform_update(self, serializer):
         if serializer.instance.user_id != self.request.user.id:
             raise PermissionDenied('Você só pode editar as suas próprias publicações.')
         serializer.save()
 
+    # Recusa a exclusão de outro autor e apaga o registro quando a autoria é confirmada.
     def perform_destroy(self, instance):
         if instance.user_id != self.request.user.id:
             raise PermissionDenied('Você só pode excluir as suas próprias publicações.')
         instance.delete()
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    # Cria ou remove a curtida do usuário e consulta a contagem atualizada no banco.
     def like(self, request, pk=None):
         post = self.get_object()
         like, created = PostLike.objects.get_or_create(post=post, user=request.user)
@@ -156,6 +176,7 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response({'liked': created, 'likes_count': PostLike.objects.filter(post=post).count()})
 
     @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
+    # Lista os comentários do post ou cria um comentário associado ao autor da requisição.
     def comments(self, request, pk=None):
         post = self.get_object()
         if request.method == 'POST':

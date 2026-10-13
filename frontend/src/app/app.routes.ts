@@ -1,3 +1,4 @@
+// Relaciona os endereços do site às páginas Angular; caminhos desconhecidos voltam ao início.
 import { Routes } from '@angular/router';
 
 import { ChecagemComponent } from './pages/checagem/checagem.component';

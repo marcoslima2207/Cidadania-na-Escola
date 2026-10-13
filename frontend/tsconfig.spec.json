@@ -1,9 +1,11 @@
+// Compilação dos testes: inclui os arquivos spec e disponibiliza os tipos globais do Vitest.
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
+    // Reconhece describe, it, expect e os demais recursos globais do Vitest.
     "types": [
       "vitest/globals"
     ]

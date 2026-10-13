@@ -1,3 +1,4 @@
+// Componente raiz: mantém o cabeçalho e o rodapé e exibe a página escolhida pelo roteador.
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
@@ -8,7 +9,9 @@ import { HeaderComponent } from './components/header/header.component';
 @Component({
   selector: 'app-root',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [RouterOutlet, HeaderComponent, FooterComponent],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <app-header></app-header>
     <main class="page-wrap">
@@ -16,6 +19,7 @@ import { HeaderComponent } from './components/header/header.component';
     </main>
     <app-footer></app-footer>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [
     `
       :host {

@@ -1,3 +1,4 @@
+// Apresenta o projeto e o carrossel; a classe também mantém rotinas de acesso e publicação.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
@@ -7,12 +8,16 @@ import { RouterLink } from '@angular/router';
 import { apiConfig } from '../../api-config';
 
 // HOME: apresentacao da plataforma, carrossel e chamada para o quiz.
+// Restringe os valores aceitos pelo tipo PostTheme.
 type PostTheme = 'justice' | 'education' | 'fake-news';
 
+// Restringe os valores aceitos pelo tipo FeedMediaType.
 type FeedMediaType = 'image' | 'video';
 
+// Restringe os valores aceitos pelo tipo FeedAccent.
 type FeedAccent = 'blue' | 'green' | 'gold' | 'neutral';
 
+// Define o formato dos dados de Post para conferir os tipos usados pela interface.
 interface Post {
   image: string;
   title: string;
@@ -22,6 +27,7 @@ interface Post {
   description: string;
 }
 
+// Define o formato dos dados de FeedPost para conferir os tipos usados pela interface.
 interface FeedPost {
   id: number;
   author: string;
@@ -36,17 +42,20 @@ interface FeedPost {
   comments: number;
 }
 
+// Define o formato dos dados de LoginForm para conferir os tipos usados pela interface.
 interface LoginForm {
   email: string;
   password: string;
 }
 
+// Define o formato dos dados de RegisterForm para conferir os tipos usados pela interface.
 interface RegisterForm {
   name: string;
   email: string;
   password: string;
 }
 
+// Define o formato dos dados de DraftPost para conferir os tipos usados pela interface.
 interface DraftPost {
   category: string;
   type: FeedMediaType;
@@ -57,7 +66,9 @@ interface DraftPost {
 @Component({
   selector: 'app-home',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, RouterLink, FormsModule],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <main class="home-page">
       @if (loginOpen) {
@@ -194,6 +205,7 @@ interface DraftPost {
       </section>
     </main>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     :host {
       display: block;
@@ -1008,6 +1020,7 @@ interface DraftPost {
   `]
 })
 export class HomeComponent implements OnInit {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   currentIndex = 0;
   isLoggedIn = false;
   loginOpen = false;
@@ -1115,27 +1128,33 @@ export class HomeComponent implements OnInit {
     }
   ];
 
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(private http: HttpClient) {}
 
+  // Executa a inicialização da página quando o Angular cria o componente.
   ngOnInit(): void {
     const token = localStorage.getItem(this.tokenKey);
     this.isLoggedIn = !!token;
     this.loadPosts();
   }
 
+  // Abre o formulário de acesso da página inicial no modo de login.
   openLogin(): void {
     this.authMode = 'login';
     this.loginOpen = true;
   }
 
+  // Alterna o formulário da página inicial entre login e cadastro.
   setAuthMode(mode: 'login' | 'register'): void {
     this.authMode = mode;
   }
 
+  // Fecha o formulário de acesso da página inicial.
   closeLogin(): void {
     this.loginOpen = false;
   }
 
+  // Envia usuário ou e-mail e senha à API e guarda o token quando as credenciais são aceitas.
   login(): void {
     if (!this.loginForm.email.trim() || !this.loginForm.password.trim()) {
       return;
@@ -1160,6 +1179,7 @@ export class HomeComponent implements OnInit {
       });
   }
 
+  // Envia nome, e-mail e senha para criar a conta e guardar o token inicial.
   register(): void {
     if (!this.registerForm.name.trim() || !this.registerForm.email.trim() || !this.registerForm.password.trim()) {
       return;
@@ -1187,6 +1207,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  // Consulta as publicações e converte os dados da API para o formato mantido pela página inicial.
   loadPosts(): void {
     this.http.get<Array<{
       id: number;
@@ -1221,6 +1242,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  // Restaura os valores iniciais do rascunho de publicação da página inicial.
   resetDraft(): void {
     this.draftPost = {
       category: 'Direitos Trabalhistas',
@@ -1230,6 +1252,7 @@ export class HomeComponent implements OnInit {
     };
   }
 
+  // Envia o rascunho da página inicial pelo fluxo legado com uma URL de mídia fixa.
   publishPost(): void {
     if (!this.isLoggedIn) {
       this.openLogin();
@@ -1263,10 +1286,12 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  // Avança o índice do carrossel e volta ao primeiro item quando chega ao fim.
   nextSlide(): void {
     this.currentIndex = (this.currentIndex + 1) % this.posts.length;
   }
 
+  // Recua o índice do carrossel e volta ao último item quando ultrapassa o início.
   prevSlide(): void {
     this.currentIndex = (this.currentIndex - 1 + this.posts.length) % this.posts.length;
   }

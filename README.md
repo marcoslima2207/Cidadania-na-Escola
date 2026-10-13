@@ -90,6 +90,9 @@ Dessa forma, o projeto pretende estimular o usuário a **buscar informações, q
 
 # 🛠️ Tecnologias utilizadas
 
+Para entender a estrutura, os comentários e as configurações, consulte o
+[guia do código comentado](docs/CODIGO_COMENTADO.md).
+
 ## Front-end
 
 ### Angular
@@ -172,7 +175,7 @@ A aplicação seguirá uma arquitetura separando o front-end, back-end e banco d
 - Quiz interativo com pontuação e resultado;
 - Criação de conta e login por e-mail ou usuário;
 - Logout e controle de sessão por token;
-- Perfil personalizável com bio, foto por URL ou avatar ilustrativo;
+- Perfil personalizável com bio, upload de foto, foto por URL ou oito avatares ilustrados;
 - Área exclusiva para criar publicações;
 - Área exclusiva para visualizar as postagens;
 - Busca por palavras nos posts, sem distinguir acentos ou maiúsculas, e filtros por assunto;
@@ -262,6 +265,12 @@ A migração `0005_post_media_file` adiciona o arquivo das publicações. O form
 PNG, WEBP, MP4, WEBM e MOV de até 20 MB. A API verifica o tipo, a extensão e a assinatura
 do arquivo, determina se é foto ou vídeo e retorna o endereço em `media_url`.
 Publicações antigas que usam URLs continuam disponíveis.
+
+O perfil também aceita upload direto em `PATCH /api/auth/profile/`, com o campo
+`avatar_file`: JPG, JPEG, JFIF, PNG ou WEBP de até 5 MB. O endereço retornado é
+`avatar_file_url`. Escolher uma ilustração ou um link substitui a foto enviada;
+atualizar somente a bio preserva a foto. A migração `0006_profile_avatar_file_and_choices`
+adiciona o upload e converte as escolhas antigas para as novas ilustrações.
 
 Os arquivos são salvos em `MEDIA_ROOT` (por padrão, `backend/media`) e servidos em
 `/media/`. Em produção, configure `MEDIA_ROOT` em um volume persistente com backup;

@@ -1,5 +1,7 @@
+/* Estilos globais: fontes, cores, tamanho dos elementos e recursos de acessibilidade do site. */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700;800;900&family=Open+Sans:wght@400;600;700;800&display=swap');
 
+/* Variáveis compartilhadas: permitem reutilizar a mesma paleta em todo o site. */
 :root {
   --bg-page: #f4f7f5;
   --panel-bg: #f4f1ee;
@@ -13,10 +15,12 @@
   --white: #ffffff;
 }
 
+/* Inclui padding e borda no tamanho declarado, evitando elementos maiores que o esperado. */
 * {
   box-sizing: border-box;
 }
 
+/* Aparência básica e tipografia herdadas pelas páginas. */
 html,
 body {
   margin: 0;
@@ -50,6 +54,7 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Respeita a preferência do sistema por menos movimento nas animações. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -76,6 +81,7 @@ h3,
   color: #0a2d6c;
 }
 
+/* Torna visível o elemento alcançado pela navegação com o teclado. */
 :focus-visible {
   outline: 3px solid rgba(240, 191, 45, 0.9);
   outline-offset: 3px;

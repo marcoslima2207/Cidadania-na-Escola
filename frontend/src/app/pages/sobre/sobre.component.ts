@@ -1,9 +1,11 @@
+// Apresenta a proposta educativa e o contexto do projeto Cidadania na Escola.
 import { Component } from '@angular/core';
 
 // INSTITUCIONAL: missao, visao e valores do projeto.
 @Component({
   selector: 'app-sobre',
   standalone: true,
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <section class="page page--sobre">
       <header class="page__header">
@@ -33,6 +35,7 @@ import { Component } from '@angular/core';
       </div>
     </section>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     :host { display: block; }
     .page {

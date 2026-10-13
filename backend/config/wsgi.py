@@ -1,3 +1,4 @@
+# Expõe a aplicação Django pelo protocolo WSGI usado pelo Gunicorn no deploy.
 """
 WSGI config for config project.
 

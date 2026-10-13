@@ -1,3 +1,4 @@
+// Testa busca, sessão autenticada, curtidas e publicação multipart com uma API simulada.
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';

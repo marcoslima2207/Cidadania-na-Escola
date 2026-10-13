@@ -1,3 +1,4 @@
+// Alterna entre login e cadastro, valida os campos e guarda o token devolvido pela API.
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
@@ -10,7 +11,9 @@ import { apiConfig } from '../../api-config';
 @Component({
   selector: 'app-acesso',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, FormsModule, RouterLink],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <main class="access-page">
       <section class="access-card">
@@ -36,6 +39,7 @@ import { apiConfig } from '../../api-config';
       </section>
     </main>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     :host { display:block; }
     .access-page { max-width: 1100px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
@@ -63,6 +67,7 @@ import { apiConfig } from '../../api-config';
   `]
 })
 export class AcessoComponent {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   mode: 'login' | 'register' = 'login';
   email = '';
   password = '';
@@ -72,8 +77,10 @@ export class AcessoComponent {
   registerForm = { name: '' };
   private readonly api = apiConfig.baseUrl;
 
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(private http: HttpClient, private router: Router) {}
 
+  // Troca entre entrar e cadastrar, limpando senha e mensagens da tentativa anterior.
   setMode(mode: 'login' | 'register'): void {
     this.mode = mode;
     this.error = '';
@@ -81,6 +88,7 @@ export class AcessoComponent {
     this.showPassword = false;
   }
 
+  // Valida o formulário, chama login ou cadastro e, no sucesso, abre a comunidade.
   submit(): void {
     this.error = '';
     if (this.mode === 'register' && this.registerForm.name.trim().length < 2) {

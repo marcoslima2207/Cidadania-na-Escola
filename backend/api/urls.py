@@ -1,3 +1,4 @@
+# Registra os ViewSets no roteador do DRF, que gera as URLs das operações e ações.
 from django.urls import include, path
 
 from rest_framework.routers import DefaultRouter

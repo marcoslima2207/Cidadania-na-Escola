@@ -1,9 +1,11 @@
+// Exibe o rodapé compartilhado pelas páginas, com identificação e informações do projeto.
 import { Component } from '@angular/core';
 
 // RODAPE: identidade e links institucionais exibidos no fim das paginas.
 @Component({
   selector: 'app-footer',
   standalone: true,
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <footer class="site-footer">
       <div class="site-footer__inner">
@@ -26,6 +28,7 @@ import { Component } from '@angular/core';
       </div>
     </footer>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     .site-footer {
       background: linear-gradient(180deg, #0e2d63 0%, #0b234b 100%);

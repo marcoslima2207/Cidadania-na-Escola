@@ -1,12 +1,16 @@
+# Define os recursos que o Render provisiona e a configuração do backend publicado.
 services:
   # DEPLOY API: serviço Django executado pelo Render.
   - type: web
     name: cidadania-na-escola-api
     runtime: python
     rootDir: backend
+    # Instala as bibliotecas e atualiza a estrutura do banco antes de iniciar o serviço.
     buildCommand: pip install -r requirements.txt && python manage.py migrate
+    # Executa a aplicação WSGI; a checagem de saúde consulta a raiz da API.
     startCommand: gunicorn config.wsgi:application
     healthCheckPath: /api/
+    # Valores disponíveis em os.getenv no settings.py; credenciais vêm do banco vinculado.
     envVars:
       - key: DJANGO_SECRET_KEY
         generateValue: true
@@ -34,6 +38,7 @@ services:
         fromDatabase:
           name: cidadania-na-escola-db
           property: port
+      # Autoriza chamadas feitas pelo domínio do frontend no GitHub Pages.
       - key: CORS_ALLOWED_ORIGINS
         value: https://marcoslima2207.github.io
 

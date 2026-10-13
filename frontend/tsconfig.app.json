@@ -1,3 +1,4 @@
+// Compilação da aplicação: herda as regras comuns e exclui arquivos de teste do código publicado.
 /* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
 /* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
 {
@@ -9,6 +10,7 @@
   "include": [
     "src/**/*.ts"
   ],
+  // Os testes não fazem parte do código da aplicação publicado no site.
   "exclude": [
     "src/**/*.spec.ts"
   ]

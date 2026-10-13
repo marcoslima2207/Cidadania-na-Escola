@@ -1,3 +1,4 @@
+// Controla o menu responsivo, os links de navegação e o encerramento da sessão.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component } from '@angular/core';
@@ -9,7 +10,9 @@ import { apiConfig } from '../../api-config';
 @Component({
   selector: 'app-header',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, RouterLink, RouterLinkActive],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `
     <header class="site-header">
       <div class="brand">
@@ -55,6 +58,7 @@ import { apiConfig } from '../../api-config';
       </nav>
     </header>
   `,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [`
     .site-header {
       display: grid;
@@ -233,16 +237,20 @@ import { apiConfig } from '../../api-config';
   `]
 })
 export class HeaderComponent {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   menuOpen = false;
   isLoggedIn = !!localStorage.getItem('cidadania_token');
 
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(private http: HttpClient, private router: Router) {
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      // Ao terminar a navegação, fecha o menu e atualiza os links de conta da sessão local.
       this.menuOpen = false;
       this.isLoggedIn = !!localStorage.getItem('cidadania_token');
     });
   }
 
+  // Solicita a invalidação do token na API e limpa a sessão local mesmo se a chamada falhar.
   logout(): void {
     const token = localStorage.getItem('cidadania_token');
     this.http.post(`${apiConfig.baseUrl}/auth/logout/`, {}, { headers: new HttpHeaders({ Authorization: `Token ${token || ''}` }) }).subscribe({
@@ -251,6 +259,7 @@ export class HeaderComponent {
     });
   }
 
+  // Remove os dados da sessão do navegador e encaminha a pessoa para a tela de acesso.
   private finishLogout(): void {
     localStorage.removeItem('cidadania_token');
     localStorage.removeItem('cidadania_username');

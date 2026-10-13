@@ -1,3 +1,4 @@
+// Carrega o feed público, filtra assuntos e permite curtir, comentar e excluir posts próprios.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
@@ -5,7 +6,9 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { apiConfig } from '../../api-config';
+import { avatarImage } from '../../avatar-options';
 
+// Define o formato dos dados de Post para conferir os tipos usados pela interface.
 interface Post {
   id: number;
   author: string;
@@ -20,6 +23,7 @@ interface Post {
   is_mine: boolean;
   author_profile?: { avatar_url: string; avatar_choice: string };
 }
+// Define o formato dos dados de Comment para conferir os tipos usados pela interface.
 interface Comment {
   id: number;
   author: string;
@@ -30,7 +34,9 @@ interface Comment {
 @Component({
   selector: 'app-postagens',
   standalone: true,
+  // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
   imports: [CommonModule, FormsModule, RouterLink],
+  // HTML da página: liga campos, eventos e condições ao estado do componente.
   template: `<main class="posts-page">
     <header class="posts-head">
       <div>
@@ -65,7 +71,10 @@ interface Comment {
               @if (post.author_profile?.avatar_url) {
                 <img [src]="post.author_profile?.avatar_url" [alt]="'Foto de ' + post.author" />
               } @else {
-                <span>{{ avatarSymbol(post.author_profile?.avatar_choice) }}</span>
+                <img
+                  [src]="illustrationImage(post.author_profile?.avatar_choice)"
+                  [alt]="'Ilustração de ' + post.author"
+                />
               }
             </div>
             <div>
@@ -157,6 +166,7 @@ interface Comment {
       }
     </section>
   </main>`,
+  // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styles: [
     `
       :host {
@@ -405,6 +415,7 @@ interface Comment {
   ],
 })
 export class PostagensComponent implements OnInit {
+  // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   posts: Post[] = [];
   openPost: number | null = null;
   comments: Comment[] = [];
@@ -412,20 +423,25 @@ export class PostagensComponent implements OnInit {
   loading = false;
   error = '';
   category = '';
+  // Identifica posts com uma ação pendente para evitar curtidas ou comentários duplicados.
   busy = new Set<number>();
   categories = ['Cidadania', 'Democracia', 'Desinformação', 'Direitos Trabalhistas', 'Educação'];
   private readonly api = apiConfig.baseUrl;
   private loadId = 0;
+  // Indica se existe um token no navegador; a API confirma sua validade em cada requisição.
   get loggedIn(): boolean {
     return !!localStorage.getItem('cidadania_token');
   }
+  // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(
     private http: HttpClient,
     private route: ActivatedRoute,
   ) {}
+  // Executa a inicialização da página quando o Angular cria o componente.
   ngOnInit(): void {
     this.load();
   }
+  // Consulta os posts com sessão e filtro de categoria, tratando carregamento e falhas de rede.
   load(): void {
     const id = ++this.loadId;
     this.loading = true;
@@ -441,6 +457,7 @@ export class PostagensComponent implements OnInit {
           if (id !== this.loadId) return;
           this.posts = posts;
           this.loading = false;
+          // Um resultado da busca pode abrir o feed já posicionado no post escolhido.
           const postId = this.route.snapshot.queryParamMap.get('post');
           if (postId)
             setTimeout(
@@ -456,15 +473,15 @@ export class PostagensComponent implements OnInit {
         },
       });
   }
-  avatarSymbol(choice?: string): string {
-    return (
-      ({ sun: '☀', leaf: '✦', star: '✧', book: '▣' } as Record<string, string>)[choice || 'sun'] ||
-      '◎'
-    );
+  // Usa o mesmo catálogo de ilustrações apresentado na edição do perfil.
+  illustrationImage(choice?: string): string {
+    return avatarImage(choice);
   }
+  // Usa a indicação de autoria devolvida pela API para mostrar a opção de excluir.
   isMine(post: Post): boolean {
     return post.is_mine;
   }
+  // Alterna a curtida do post e impede outra chamada enquanto a primeira estiver pendente.
   like(post: Post): void {
     if (!this.loggedIn) {
       this.error = 'Entre na sua conta para curtir.';
@@ -488,6 +505,7 @@ export class PostagensComponent implements OnInit {
         error: (e) => this.failed(post, e),
       });
   }
+  // Pede confirmação de exclusão, envia DELETE e remove o post do feed após o sucesso.
   deletePost(post: Post): void {
     if (!confirm('Excluir esta publicação?')) return;
     this.http.delete(`${this.api}/posts/${post.id}/`, { headers: this.headers() }).subscribe({
@@ -497,6 +515,7 @@ export class PostagensComponent implements OnInit {
       error: (e) => this.failed(post, e),
     });
   }
+  // Abre ou fecha os comentários e consulta a lista do post selecionado.
   toggleComments(post: Post): void {
     this.openPost = this.openPost === post.id ? null : post.id;
     this.comments = [];
@@ -511,6 +530,7 @@ export class PostagensComponent implements OnInit {
           error: (e) => this.failed(post, e),
         });
   }
+  // Envia o comentário e atualiza a lista e a contagem quando a API confirma o cadastro.
   comment(post: Post): void {
     if (!this.commentText.trim() || this.busy.has(post.id)) return;
     this.busy.add(post.id);
@@ -533,6 +553,7 @@ export class PostagensComponent implements OnInit {
         error: (e) => this.failed(post, e),
       });
   }
+  // Libera o bloqueio da ação e apresenta uma mensagem para sessão expirada ou outra falha.
   private failed(post: Post, e: { status: number }): void {
     this.busy.delete(post.id);
     this.error =
@@ -540,6 +561,7 @@ export class PostagensComponent implements OnInit {
         ? 'Sua sessão expirou. Entre novamente.'
         : 'Não foi possível concluir a ação. Tente novamente.';
   }
+  // Monta o cabeçalho de autenticação com o token salvo no navegador.
   private headers(): HttpHeaders {
     const token = localStorage.getItem('cidadania_token');
     return new HttpHeaders(token ? { Authorization: 'Token ' + token } : {});
