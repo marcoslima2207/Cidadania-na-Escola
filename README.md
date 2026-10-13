@@ -175,7 +175,9 @@ A aplicação seguirá uma arquitetura separando o front-end, back-end e banco d
 - Perfil personalizável com bio, foto por URL ou avatar ilustrativo;
 - Área exclusiva para criar publicações;
 - Área exclusiva para visualizar as postagens;
-- Publicações com texto, imagem ou link de vídeo;
+- Busca por palavras nos posts, sem distinguir acentos ou maiúsculas, e filtros por assunto;
+- Assuntos educativos agrupados na busca e glossário dos principais temas;
+- Publicações com texto e upload direto de fotos ou vídeos, com prévia;
 - Curtidas e comentários autenticados;
 - Exclusão permitida somente para o autor da publicação;
 - Interface responsiva com animações leves e suporte a redução de movimento.
@@ -244,6 +246,7 @@ DJANGO_SECRET_KEY=chave-secreta
 DEBUG=False
 ALLOWED_HOSTS=.onrender.com
 CORS_ALLOWED_ORIGINS=https://marcoslima2207.github.io
+MEDIA_ROOT=/caminho/do/disco/persistente/media
 ```
 
 O deploy do Render deve executar as migrações antes de iniciar o serviço:
@@ -252,16 +255,39 @@ O deploy do Render deve executar as migrações antes de iniciar o serviço:
 pip install -r requirements.txt && python manage.py migrate
 ```
 
+### Fotos e vídeos da comunidade
+
+A migração `0005_post_media_file` adiciona o arquivo das publicações. O formulário envia
+`multipart/form-data` com `media_file`, sem precisar de URL externa. São aceitos JPG,
+PNG, WEBP, MP4, WEBM e MOV de até 20 MB. A API verifica o tipo, a extensão e a assinatura
+do arquivo, determina se é foto ou vídeo e retorna o endereço em `media_url`.
+Publicações antigas que usam URLs continuam disponíveis.
+
+Os arquivos são salvos em `MEDIA_ROOT` (por padrão, `backend/media`) e servidos em
+`/media/`. Em produção, configure `MEDIA_ROOT` em um volume persistente com backup;
+o disco temporário do serviço não conserva uploads após recriações. Os arquivos não
+entram no Git. O navegador precisa suportar o codec do vídeo para reproduzi-lo.
+
+### Busca e comunidade
+
+`GET /api/posts/?search=palavra&category=Cidadania` busca no título, no texto e na
+categoria. Os parâmetros são opcionais. O significado exibido vem do glossário local;
+quando não há definição cadastrada, a interface informa isso e apresenta os posts.
+A busca atual percorre os textos dos posts no servidor para normalizar acentos;
+para grandes volumes, substitua por um índice de busca com paginação.
+
+A leitura de publicações e comentários é pública. Publicar, curtir e comentar exigem
+autenticação. A curtida pode ser desfeita, e somente o autor pode editar ou excluir
+sua publicação.
+
 ## 🔭 Futuras melhorias
 
-- Upload real de fotos e vídeos, sem depender de URLs externas;
 - Armazenamento permanente em PostgreSQL com backups;
 - Recuperação de senha por e-mail;
 - Confirmação de e-mail no cadastro;
 - Edição e exclusão de comentários próprios;
 - Respostas encadeadas aos comentários;
 - Notificações de curtidas e comentários;
-- Busca e filtros por categoria;
 - Paginação e carregamento progressivo das postagens;
 - Moderação e denúncia de conteúdo;
 - Painel administrativo para professores e equipe do projeto;

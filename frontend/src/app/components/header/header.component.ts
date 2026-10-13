@@ -25,6 +25,7 @@ import { apiConfig } from '../../api-config';
       </div>
 
       <div class="header-actions">
+        <a routerLink="/buscar" class="search-link" aria-label="Buscar assuntos" title="Buscar assuntos">⌕</a>
         @if (isLoggedIn) {
           <a routerLink="/perfil" class="header-login">Meu perfil</a>
           <button type="button" class="logout-button" (click)="logout()">Sair</button>
@@ -46,21 +47,18 @@ import { apiConfig } from '../../api-config';
           <a routerLink="/acesso" routerLinkActive="active" class="mobile-account-link">Entrar / Criar conta</a>
         }
         <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Início</a>
-        <a routerLink="/democracia" routerLinkActive="active">Democracia</a>
-        <a routerLink="/desinformacao" routerLinkActive="active">Desinformação</a>
-        <a routerLink="/checagem" routerLinkActive="active">Checagem</a>
-        <a routerLink="/direitos-trabalhistas" routerLinkActive="active">Direitos Trabalhistas</a>
+        <a routerLink="/buscar" routerLinkActive="active">Assuntos e busca</a>
         <a routerLink="/quiz" routerLinkActive="active">Quiz</a>
         <a routerLink="/sobre" routerLinkActive="active">Sobre</a>
-        <a routerLink="/postagens" routerLinkActive="active">Postagens</a>
+        <a routerLink="/postagens" routerLinkActive="active">Comunidade</a>
         <a routerLink="/publicar" routerLinkActive="active">Publicar</a>
-        @if (isLoggedIn) { <a routerLink="/perfil" routerLinkActive="active">Meu perfil</a> }
       </nav>
     </header>
   `,
   styles: [`
     .site-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
@@ -106,10 +104,27 @@ import { apiConfig } from '../../api-config';
       font-size: 1.05rem;
     }
     .header-actions {
+      grid-column: 3;
+      grid-row: 1;
       display: flex;
       align-items: center;
       gap: 0.8rem;
     }
+    .search-link {
+      display: inline-grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid #cbd9e8;
+      border-radius: 50%;
+      color: #0d2d6b;
+      background: white;
+      font-size: 1.7rem;
+      line-height: 1;
+      text-decoration: none;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+    .search-link:hover { transform: translateY(-2px) scale(1.04); background: #edf5ff; box-shadow: 0 10px 20px rgba(13,45,107,.12); }
     .header-login {
       display: inline-flex;
       align-items: center;
@@ -137,11 +152,13 @@ import { apiConfig } from '../../api-config';
     }
     .logout-button:hover { background: #edf5ff; color: #0d2d6b; }
     .nav {
-      display: none;
-      flex-wrap: wrap;
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      flex-wrap: nowrap;
       gap: 0.7rem 1rem;
       justify-content: center;
-      width: 100%;
+      width: auto;
       padding-top: 0.5rem;
     }
     .nav.nav--open {
@@ -154,7 +171,7 @@ import { apiConfig } from '../../api-config';
       animation: menu-in 0.22s ease both;
     }
     .menu-toggle {
-      display: inline-flex;
+      display: none;
       align-items: center;
       gap: 0.45rem;
       border: 1px solid #cbd9e8;
@@ -185,22 +202,33 @@ import { apiConfig } from '../../api-config';
       from { opacity: 0; transform: translateY(-8px) scale(0.98); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
-    @media (max-width: 700px) {
+    .mobile-account-link, .mobile-logout { display: none; }
+    @media (max-width: 1200px) {
+      .site-header { display: flex; }
+      .nav { display: none; width: 100%; }
+      .menu-toggle { display: inline-flex; }
       .site-header {
         padding: 0.9rem 1rem;
         justify-content: space-between;
       }
       .brand__mark { width: 52px; height: 36px; }
+      .brand { min-width: 0; }
       .mark { width: 18px; height: 29px; }
       .mark--green { left: 16px; }
       .brand__text { font-size: 0.78rem; }
       .header-login, .logout-button { display: none; }
+      .search-link { width: 38px; height: 38px; font-size: 1.5rem; }
       .nav.nav--open { display: grid; grid-template-columns: 1fr 1fr; }
       .nav a { text-align: center; padding: 0.65rem 0.45rem; font-size: 0.9rem; }
       .nav .mobile-account-link,
-      .nav .mobile-logout { grid-column: span 2; }
+      .nav .mobile-logout { display: block; grid-column: span 2; }
       .nav .mobile-account-link { background: #0d2d6b; color: white; }
       .mobile-logout { border: 1px solid #cbd9e8; border-radius: 999px; padding: 0.65rem 0.45rem; background: white; color: #173a6d; font: inherit; font-weight: 800; cursor: pointer; }
+    }
+    @media (max-width: 400px) {
+      .header-actions { gap: .4rem; }
+      .brand { gap: .5rem; }
+      .menu-toggle span:last-child { display: none; }
     }
   `]
 })
@@ -210,6 +238,7 @@ export class HeaderComponent {
 
   constructor(private http: HttpClient, private router: Router) {
     this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe(() => {
+      this.menuOpen = false;
       this.isLoggedIn = !!localStorage.getItem('cidadania_token');
     });
   }

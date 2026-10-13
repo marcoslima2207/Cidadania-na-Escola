@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, get_user_model
+from pathlib import Path
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
 
@@ -79,13 +80,60 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     liked_by_me = serializers.SerializerMethodField()
+    media_file = serializers.FileField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'created_at', 'author', 'author_profile', 'is_mine', 'likes_count', 'comments_count', 'liked_by_me']
+        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'media_file', 'created_at', 'author', 'author_profile', 'is_mine', 'likes_count', 'comments_count', 'liked_by_me']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['media_url'] = self.get_media_url(instance)
+        return data
+
+    def validate(self, attrs):
+        media = attrs.get('media_file')
+        if media:
+            attrs['media_type'] = 'video' if media.content_type.startswith('video/') else 'image'
+            attrs['media_url'] = ''
+        return attrs
 
     def get_author(self, obj):
         return obj.user.username
+
+    def get_media_url(self, obj):
+        if obj.media_file:
+            request = self.context.get('request')
+            return request.build_absolute_uri(obj.media_file.url) if request else obj.media_file.url
+        return obj.media_url
+
+    def validate_media_file(self, value):
+        if value is None:
+            return value
+        allowed_types = {'image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'}
+        if value.content_type not in allowed_types:
+            raise serializers.ValidationError('Envie uma imagem JPG, PNG, WEBP ou um vídeo MP4, WEBM ou MOV.')
+        extensions = {
+            'image/jpeg': {'.jpg', '.jpeg'}, 'image/png': {'.png'}, 'image/webp': {'.webp'},
+            'video/mp4': {'.mp4'}, 'video/webm': {'.webm'}, 'video/quicktime': {'.mov'},
+        }
+        if Path(value.name).suffix.lower() not in extensions[value.content_type]:
+            raise serializers.ValidationError('A extensão do arquivo não corresponde ao formato informado.')
+        if value.size > 20 * 1024 * 1024:
+            raise serializers.ValidationError('A mídia deve ter no máximo 20 MB.')
+        header = value.read(32)
+        value.seek(0)
+        signatures = {
+            'image/jpeg': header.startswith(b'\xff\xd8\xff'),
+            'image/png': header.startswith(b'\x89PNG\r\n\x1a\n'),
+            'image/webp': header.startswith(b'RIFF') and header[8:12] == b'WEBP',
+            'video/mp4': header[4:8] == b'ftyp',
+            'video/quicktime': header[4:8] in (b'ftyp', b'moov', b'mdat', b'wide'),
+            'video/webm': header.startswith(b'\x1a\x45\xdf\xa3'),
+        }
+        if not signatures[value.content_type]:
+            raise serializers.ValidationError('O conteúdo do arquivo não corresponde ao formato informado.')
+        return value
 
     def get_author_profile(self, obj):
         profile = getattr(obj.user, 'profile', None)

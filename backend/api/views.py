@@ -1,4 +1,11 @@
+from pathlib import Path
+import unicodedata
+import mimetypes
+import re
+
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -18,6 +25,44 @@ from .serializers import (
     ResultadoSerializer,
     UsuarioSerializer,
 )
+
+
+# MIDIA: serve arquivos enviados sem permitir acesso fora de MEDIA_ROOT.
+def serve_uploaded_media(request, path):
+    media_root = Path(settings.MEDIA_ROOT).resolve()
+    requested_file = (media_root / path).resolve()
+    if media_root not in requested_file.parents or not requested_file.is_file():
+        raise Http404
+    size = requested_file.stat().st_size
+    range_header = request.headers.get('Range')
+    if range_header:
+        match = re.fullmatch(r'bytes=(\d*)-(\d*)', range_header)
+        if not match or not any(match.groups()):
+            return HttpResponse(status=416, headers={'Content-Range': f'bytes */{size}'})
+        first, last = match.groups()
+        start = int(first) if first else max(0, size - int(last))
+        end = min(int(last), size - 1) if first and last else size - 1
+        if start >= size or start > end:
+            return HttpResponse(status=416, headers={'Content-Range': f'bytes */{size}'})
+
+        def chunks():
+            with requested_file.open('rb') as stream:
+                stream.seek(start)
+                remaining = end - start + 1
+                while remaining:
+                    chunk = stream.read(min(64 * 1024, remaining))
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    yield chunk
+
+        response = StreamingHttpResponse(chunks(), status=206, content_type=mimetypes.guess_type(requested_file.name)[0] or 'application/octet-stream')
+        response['Content-Range'] = f'bytes {start}-{end}/{size}'
+        response['Content-Length'] = end - start + 1
+    else:
+        response = FileResponse(requested_file.open('rb'))
+    response['Accept-Ranges'] = 'bytes'
+    return response
 
 
 # AUTENTICAÇÃO: login, logout e perfil do usuário atual.
@@ -60,17 +105,42 @@ class AuthViewSet(viewsets.ViewSet):
 
 # POSTAGENS: leitura pública; criação, interação e exclusão exigem token.
 class PostViewSet(viewsets.ModelViewSet):
-    queryset = Post.objects.all().order_by('-created_at')
+    queryset = Post.objects.select_related('user', 'user__profile').prefetch_related('likes', 'comments').order_by('-created_at', '-id')
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
     def get_permissions(self):
+        if self.action == 'comments' and self.request.method == 'GET':
+            return [AllowAny()]
         if self.action in ['create', 'update', 'partial_update', 'destroy', 'like', 'comments']:
             return [IsAuthenticated()]
         return [AllowAny()]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.action == 'list':
+            term = self.request.query_params.get('search', '').strip()
+            category = self.request.query_params.get('category', '').strip()
+            if term:
+                def normalize(value):
+                    return ''.join(c for c in unicodedata.normalize('NFD', value.casefold()) if not unicodedata.combining(c))
+                normalized_term = normalize(term)
+                matching_ids = [
+                    row['id'] for row in queryset.values('id', 'title', 'content', 'category')
+                    if normalized_term in normalize(' '.join([row['title'], row['content'], row['category']]))
+                ]
+                queryset = queryset.filter(id__in=matching_ids)
+            if category:
+                queryset = queryset.filter(category=category)
+        return queryset
+
+    def perform_update(self, serializer):
+        if serializer.instance.user_id != self.request.user.id:
+            raise PermissionDenied('Você só pode editar as suas próprias publicações.')
+        serializer.save()
 
     def perform_destroy(self, instance):
         if instance.user_id != self.request.user.id:
@@ -83,7 +153,7 @@ class PostViewSet(viewsets.ModelViewSet):
         like, created = PostLike.objects.get_or_create(post=post, user=request.user)
         if not created:
             like.delete()
-        return Response({'liked': created, 'likes_count': post.likes.count()})
+        return Response({'liked': created, 'likes_count': PostLike.objects.filter(post=post).count()})
 
     @action(detail=True, methods=['get', 'post'], permission_classes=[IsAuthenticated])
     def comments(self, request, pk=None):

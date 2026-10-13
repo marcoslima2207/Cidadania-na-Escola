@@ -1,4 +1,8 @@
 from django.contrib.auth import get_user_model
+import base64
+import tempfile
+from django.test import override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -9,8 +13,14 @@ User = get_user_model()
 
 
 # TESTES DE API: conteudo, autenticacao, posts e interacoes sociais.
+@override_settings(PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher'])
 class ApiEndpointsTests(APITestCase):
     def setUp(self):
+        self.media_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.media_dir.cleanup)
+        media_settings = override_settings(MEDIA_ROOT=self.media_dir.name)
+        media_settings.enable()
+        self.addCleanup(media_settings.disable)
         self.conteudo = Conteudo.objects.create(
             titulo='Democracia e participação',
             descricao='Como a participação cidadã fortalece a democracia',
@@ -107,6 +117,30 @@ class ApiEndpointsTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_create_post_with_real_media_upload(self):
+        login_response = self.client.post(
+            reverse('auth-login'),
+            {'username': 'aluno', 'password': '12345678'},
+            format='json'
+        )
+        image = SimpleUploadedFile('cidadania.png', base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII='), content_type='image/png')
+        response = self.client.post(
+            reverse('post-list'),
+            {
+                'title': 'Imagem da comunidade',
+                'category': 'Cidadania',
+                'content': 'Publicação com upload real.',
+                'media_type': 'image',
+                'media_file': image,
+            },
+            format='multipart',
+            HTTP_AUTHORIZATION=f"Token {login_response.data['token']}"
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        uploaded_post = Post.objects.get(id=response.data['id'])
+        self.assertTrue(uploaded_post.media_file.name)
+        self.assertIn('/media/posts/', response.data['media_url'])
+
     def test_post_like_and_comment(self):
         post = Post.objects.create(
             user=self.user,
@@ -134,3 +168,69 @@ class ApiEndpointsTests(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(Post.objects.filter(id=post.id).exists())
+
+    def test_other_author_cannot_edit_post(self):
+        other = User.objects.create_user(username='professor', password='12345678')
+        post = Post.objects.create(user=other, title='Original', category='Cidadania', content='Texto')
+        self.client.force_authenticate(self.user)
+        response = self.client.patch(reverse('post-detail', args=[post.id]), {'title': 'Alterado'}, format='json')
+        self.assertEqual(response.status_code, 403)
+        post.refresh_from_db()
+        self.assertEqual(post.title, 'Original')
+
+    def test_search_and_category_filters(self):
+        Post.objects.create(user=self.user, title='Educação cidadã', category='Educação', content='Participação')
+        Post.objects.create(user=self.user, title='Outro assunto', category='Democracia', content='Eleições')
+        response = self.client.get(reverse('post-list'), {'search': 'EDUCACAO'})
+        self.assertEqual(len(response.data), 1)
+        response = self.client.get(reverse('post-list'), {'search': 'participacao', 'category': 'Democracia'})
+        self.assertEqual(response.data, [])
+
+    def test_public_comments_and_authenticated_reaction_state(self):
+        other = User.objects.create_user(username='outro', password='12345678')
+        post = Post.objects.create(user=other, title='Discussão', category='Cidadania', content='Texto')
+        self.assertEqual(self.client.get(reverse('post-comments', args=[post.id])).status_code, 200)
+        self.assertEqual(self.client.post(reverse('post-like', args=[post.id])).status_code, 401)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(reverse('post-like', args=[post.id]))
+        self.assertTrue(response.data['liked'])
+        response = self.client.get(reverse('post-list'))
+        self.assertTrue(response.data[0]['liked_by_me'])
+        self.assertFalse(response.data[0]['is_mine'])
+        response = self.client.post(reverse('post-like', args=[post.id]))
+        self.assertFalse(response.data['liked'])
+        self.assertEqual(response.data['likes_count'], 0)
+
+    def test_upload_validation(self):
+        self.client.force_authenticate(self.user)
+        payload = {'title': 'Arquivo', 'content': 'Texto', 'category': 'Cidadania'}
+        for name, content, mime in [('teste.svg', b'<svg/>', 'image/svg+xml'), ('falso.png', b'<html>erro</html>', 'image/png'), ('vazio.png', b'', 'image/png')]:
+            response = self.client.post(reverse('post-list'), {**payload, 'media_file': SimpleUploadedFile(name, content, content_type=mime)}, format='multipart')
+            self.assertEqual(response.status_code, 400)
+        oversized = SimpleUploadedFile('grande.png', b'\x89PNG\r\n\x1a\n' + b'0' * (20 * 1024 * 1024), content_type='image/png')
+        response = self.client.post(reverse('post-list'), {**payload, 'media_file': oversized}, format='multipart')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Post.objects.count(), 0)
+
+    def test_video_upload_and_media_download(self):
+        self.client.force_authenticate(self.user)
+        content = b'\x00\x00\x00\x18ftypmp42' + b'\x00' * 20
+        response = self.client.post(reverse('post-list'), {'title': 'Vídeo', 'content': 'Texto', 'category': 'Cidadania', 'media_file': SimpleUploadedFile('video.mp4', content, content_type='video/mp4')}, format='multipart')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['media_type'], 'video')
+        post = Post.objects.get(id=response.data['id'])
+        download = self.client.get(reverse('uploaded-media', args=[post.media_file.name]))
+        self.assertEqual(download.status_code, 200)
+        self.assertEqual(b''.join(download.streaming_content), content)
+        partial = self.client.get(reverse('uploaded-media', args=[post.media_file.name]), HTTP_RANGE='bytes=4-7')
+        self.assertEqual(partial.status_code, 206)
+        self.assertEqual(b''.join(partial.streaming_content), b'ftyp')
+        invalid = self.client.get(reverse('uploaded-media', args=[post.media_file.name]), HTTP_RANGE='bytes=999-')
+        self.assertEqual(invalid.status_code, 416)
+        self.assertEqual(self.client.get('/media/../config/settings.py').status_code, 404)
+
+    def test_external_media_link_is_preserved(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(reverse('post-list'), {'title': 'Legado', 'content': 'Texto', 'category': 'Cidadania', 'media_url': 'https://example.com/foto.jpg'}, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['media_url'], 'https://example.com/foto.jpg')

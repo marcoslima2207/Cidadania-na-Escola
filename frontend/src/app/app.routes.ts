@@ -11,6 +11,7 @@ import { AcessoComponent } from './pages/acesso/acesso.component';
 import { PerfilComponent } from './pages/perfil/perfil.component';
 import { PostagensComponent } from './pages/postagens/postagens.component';
 import { PublicarComponent } from './pages/publicar/publicar.component';
+import { BuscarComponent } from './pages/buscar/buscar.component';
 
 export const routes: Routes = [
   // CONTEÚDO PÚBLICO: páginas educativas e quiz.
@@ -26,5 +27,6 @@ export const routes: Routes = [
   { path: 'perfil', component: PerfilComponent },
   { path: 'postagens', component: PostagensComponent },
   { path: 'publicar', component: PublicarComponent },
+  { path: 'buscar', component: BuscarComponent },
   { path: '**', redirectTo: '' }
 ];

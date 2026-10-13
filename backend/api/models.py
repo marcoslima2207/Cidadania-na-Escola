@@ -24,6 +24,7 @@ class Post(models.Model):
     content = models.TextField()
     media_type = models.CharField(max_length=10, choices=MEDIA_CHOICES, default='image')
     media_url = models.URLField(blank=True, default='')
+    media_file = models.FileField(upload_to='posts/%Y/%m/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

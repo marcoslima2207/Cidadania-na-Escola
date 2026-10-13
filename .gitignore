@@ -9,6 +9,7 @@ __pycache__/
 venv/
 .venv/
 db.sqlite3
+/backend/media/
 *.log
 .env
 .env.*
