@@ -19,7 +19,7 @@ Projeto de extensão universitária voltado à educação para a cidadania, demo
 </div>
 
 ---
-[link para ver como está ficando](https://marcoslima2207.github.io/Cidadania-na-Escola/)
+[Acesse o site](https://marcoslima2207.github.io/Cidadania-na-Escola/)
 
 ## 📚 Sobre o projeto
 
@@ -52,9 +52,10 @@ Desenvolver uma plataforma educativa que contribua para a formação cidadã por
 
 # 🌐 Plataforma
 
-A plataforma será desenvolvida como uma aplicação web, permitindo que os usuários encontrem conteúdos educativos organizados por temas.
+A plataforma é uma aplicação web com conteúdos educativos organizados por temas,
+quiz gamificado e uma comunidade para compartilhar publicações e trocar conhecimentos.
 
-### Principais áreas planejadas
+### Áreas da plataforma
 
 | Área | Descrição |
 |---|---|
@@ -63,8 +64,10 @@ A plataforma será desenvolvida como uma aplicação web, permitindo que os usu�
 | 📰 Desinformação | Informações sobre fake news e seus impactos |
 | 🔎 Checagem | Orientações para verificar informações |
 | ⚖️ Direitos Trabalhistas | Conteúdos introdutórios sobre legislação trabalhista |
-| 🧠 Quiz | Atividades para testar os conhecimentos |
-| 📚 Materiais | Materiais educativos e conteúdos complementares |
+| 🧠 Quiz | Trilha por temas, níveis, corações, XP e desafio diário |
+| 🔎 Busca | Pesquisa de publicações por palavra e assunto, com glossário |
+| 👥 Comunidade | Publicações, fotos, vídeos, curtidas e comentários |
+| 👤 Perfil | Bio, avatares ilustrados e foto personalizada |
 | 👥 Sobre | Informações sobre o projeto e participantes |
 
 ---
@@ -73,7 +76,7 @@ A plataforma será desenvolvida como uma aplicação web, permitindo que os usu�
 
 A ideia principal é transformar conteúdos que podem parecer complexos em informações mais simples e acessíveis.
 
-A plataforma poderá apresentar:
+A plataforma reúne:
 
 - Textos explicativos;
 - Cards informativos;
@@ -137,7 +140,8 @@ Entre os dados que poderão ser armazenados estão:
 
 # 🏗️ Arquitetura
 
-A aplicação seguirá uma arquitetura separando o front-end, back-end e banco de dados.
+A aplicação separa o front-end Angular, a API Django REST e o banco de dados.
+O desenvolvimento local usa SQLite; a configuração de produção utiliza PostgreSQL.
 
 ```text
                     ┌──────────────────────┐
@@ -190,10 +194,80 @@ as migrações, os corações, o progresso e a configuração das integrações 
 - Exclusão permitida somente para o autor da publicação;
 - Interface responsiva com animações leves e suporte a redução de movimento.
 
+## 🆕 Melhorias implementadas
+
+### Carrossel da página inicial — M01
+
+- Corrigido o deslocamento das setas para avançar ou recuar exatamente um post por clique;
+- O cálculo considera a largura do cartão e o espaçamento entre os posts;
+- Comportamento adaptado para computador e celular, com limites no primeiro e no último post.
+
+### Quiz gamificado
+
+O quiz fixo foi substituído por uma trilha de aprendizagem inspirada no Duolingo,
+mantendo a identidade visual do projeto. A mudança de interface foi concentrada no quiz.
+
+- **Seis temas:** Cidadania, Democracia, Desinformação, Checagem de informação,
+  Direitos trabalhistas e Educação;
+- **Doze níveis e 36 perguntas iniciais**, com duas lições por tema e explicações educativas;
+- Liberação sequencial dos níveis após atingir pelo menos **70% de acertos**;
+- **Cinco corações por dia**, com perda de um coração por erro e renovação na primeira
+  interação após a meia-noite, no horário de Brasília;
+- **Dez XP por acerto na primeira conclusão aprovada**, sem repetir a recompensa ao refazer a lição;
+- Barra de progresso, destaque da resposta correta e resultado ao final da tentativa;
+- Progresso salvo por conta e retomada de tentativas incompletas no mesmo dia;
+- Cálculo de vidas, pontuação e desbloqueios no servidor, sem enviar o gabarito antecipadamente;
+- Reenvio da mesma resposta sem descontar outro coração ou duplicar XP;
+- Componentes Angular com interfaces TypeScript, signals e detecção de mudanças `OnPush`;
+- Modelos Django para temas, níveis, progresso, desafios diários e tentativas,
+  com migrações que preservam os dados anteriores.
+
+A trilha pode ser consultada sem login. Para jogar e salvar a evolução, é necessário entrar na conta.
+
+### Desafio diário com integração de IA — M03
+
+- Integração com o Gemini para gerar **12 perguntas por dia**, duas de cada tema;
+- Conjunto salvo por data e compartilhado entre os participantes daquele dia;
+- Validação das alternativas, explicações, quantidade e temas, evitando repetir
+  os enunciados do dia anterior;
+- Banco educativo de reserva quando a chave não estiver configurada, o provedor
+  estiver indisponível ou a resposta gerada for inválida;
+- Identificação da origem na tela: **Gerado por IA** ou **Banco educativo**;
+- Comando `python manage.py gerar_quiz_diario` para preparar o desafio pelo servidor.
+
+### Login com conta Google — M05
+
+- Botão oficial de acesso Google nas telas de entrar e criar conta;
+- Validação da credencial no backend com a biblioteca `google-auth`;
+- Verificação de e-mail, validade da credencial e nonce temporário de uso único;
+- Criação de conta ou associação permitida com uma conta existente;
+- Login por e-mail ou usuário e senha mantido disponível.
+
+**As integrações de Google e IA estão implementadas no código.** Seu funcionamento
+em produção depende das variáveis de ambiente configuradas no Render e da
+disponibilidade dos serviços externos. A configuração de produção ainda não foi
+validada nesta etapa; enviar o código ao GitHub não cadastra essas variáveis.
+
+### Comunidade, limpeza e performance
+
+- Suporte a imagens JFIF nas publicações, além dos formatos já aceitos;
+- Atualização do feed após a resposta da API no Angular sem Zone.js;
+- Bloqueio de envios duplicados durante uma publicação e tratamento de falhas de upload;
+- Remoção do feed de demonstração, do modal de login inacessível e do formulário
+  antigo de publicação da página inicial, junto de seus estilos e consultas sem uso;
+- Remoção de três serviços Angular sem consumidores que usavam endereço fixo de localhost;
+- Centralização dos novos fluxos de sessão, mensagens de erro e emissão de tokens;
+- Carregamento das páginas secundárias sob demanda;
+- Aplicação do filtro de categoria antes da normalização dos textos na busca;
+- Remoção dos arquivos Python compilados que estavam versionados;
+- Padronização dos arquivos alterados com Prettier e Ruff.
+
+As regras e os endpoints completos estão no [guia do quiz e login Google](docs/QUIZ.md).
+
 ## 🌐 Links
 
-- Site: https://marcoslima2207.github.io/Cidadania-na-Escola/
-- API: https://cidadania-na-escola-api.onrender.com/api/
+- [Site publicado](https://marcoslima2207.github.io/Cidadania-na-Escola/)
+- [API Django](https://cidadania-na-escola-api.onrender.com/api/)
 
 O front-end é publicado no GitHub Pages e a API Django é executada no Render.
 
@@ -235,13 +309,23 @@ npm run build
 
 ## 🧪 Testes e validação
 
+Na validação das melhorias, passaram **48 testes no Django** e **19 testes no Angular**,
+além do build de produção. Também foram conferidos no navegador o carrossel em
+computador e celular e os fluxos de resposta, perda de coração, retomada de tentativa,
+aprovação, ganho de XP e liberação do próximo nível.
+
+Os testes de Google e IA simulam os provedores. A autenticação Google e a geração
+real de perguntas ainda precisam ser verificadas com as configurações de produção.
+
 ```bash
 cd backend
+python manage.py makemigrations --check --dry-run
 python manage.py test api
 ```
 
 ```bash
 cd frontend
+npm test -- --watch=false
 npm run build
 ```
 
@@ -262,6 +346,29 @@ O deploy do Render deve executar as migrações antes de iniciar o serviço:
 ```bash
 pip install -r requirements.txt && python manage.py migrate
 ```
+
+### Ativar Google e IA no Render
+
+No painel do Render, abra o serviço **`cidadania-na-escola-api`**, entre em
+**Environment** e adicione uma variável por linha:
+
+| Nome da variável | Valor |
+|---|---|
+| `GOOGLE_CLIENT_ID` | ID do cliente OAuth do tipo Aplicativo da Web, terminado em `.apps.googleusercontent.com` |
+| `GEMINI_API_KEY` | Chave da API Gemini criada no Google AI Studio |
+| `GEMINI_MODEL` | `gemini-3.8-flash`, padrão do projeto, ou outro modelo compatível disponível na conta |
+
+Cadastre `https://marcoslima2207.github.io` como origem JavaScript autorizada
+do cliente Google, sem incluir o caminho `/Cidadania-na-Escola`.
+O frontend recebe o Client ID público pela API; a chave da IA permanece no backend.
+Use apenas valores de exemplo na documentação e mantenha as chaves reais fora do Git.
+
+Depois de salvar as variáveis, publique novamente o serviço para que sejam carregadas.
+Sem as configurações externas, o login por senha e o quiz com o banco educativo
+continuam disponíveis. Se o desafio do dia já tiver sido salvo com o banco de reserva,
+a IA será usada na próxima data ainda não gerada.
+
+Consulte o [passo a passo e as regras das integrações](docs/QUIZ.md).
 
 ### Fotos e vídeos da comunidade
 
@@ -296,7 +403,8 @@ sua publicação.
 
 ## 🔭 Futuras melhorias
 
-- Armazenamento permanente em PostgreSQL com backups;
+- Configuração e validação das integrações Google e Gemini em produção;
+- Backups e melhorias na persistência de dados e arquivos enviados;
 - Recuperação de senha por e-mail;
 - Confirmação de e-mail no cadastro;
 - Edição e exclusão de comentários próprios;
