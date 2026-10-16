@@ -170,9 +170,14 @@ A aplicação seguirá uma arquitetura separando o front-end, back-end e banco d
 
 ## ✅ Funcionalidades atuais
 
+O [guia do quiz gamificado e login Google](docs/QUIZ.md) explica as novas rotas,
+as migrações, os corações, o progresso e a configuração das integrações externas.
+
 - Navegação responsiva para computador e celular;
 - Conteúdos sobre democracia, desinformação, checagem e direitos trabalhistas;
-- Quiz interativo com pontuação e resultado;
+- Quiz com seis temas, doze níveis, corações diários, XP e progresso salvo;
+- Desafio diário com integração de IA e banco educativo de reserva identificado;
+- Acesso com Google preparado para configuração do Client ID no backend;
 - Criação de conta e login por e-mail ou usuário;
 - Logout e controle de sessão por token;
 - Perfil personalizável com bio, upload de foto, foto por URL ou oito avatares ilustrados;
@@ -232,7 +237,7 @@ npm run build
 
 ```bash
 cd backend
-python manage.py test api.tests
+python manage.py test api
 ```
 
 ```bash
@@ -262,7 +267,7 @@ pip install -r requirements.txt && python manage.py migrate
 
 A migração `0005_post_media_file` adiciona o arquivo das publicações. O formulário envia
 `multipart/form-data` com `media_file`, sem precisar de URL externa. São aceitos JPG,
-PNG, WEBP, MP4, WEBM e MOV de até 20 MB. A API verifica o tipo, a extensão e a assinatura
+JPEG, JFIF, PNG, WEBP, MP4, WEBM e MOV de até 20 MB. A API verifica o tipo, a extensão e a assinatura
 do arquivo, determina se é foto ou vídeo e retorna o endereço em `media_url`.
 Publicações antigas que usam URLs continuam disponíveis.
 

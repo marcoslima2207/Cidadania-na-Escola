@@ -1,33 +1,63 @@
 // Relaciona os endereços do site às páginas Angular; caminhos desconhecidos voltam ao início.
 import { Routes } from '@angular/router';
 
-import { ChecagemComponent } from './pages/checagem/checagem.component';
-import { DemocraciaComponent } from './pages/democracia/democracia.component';
-import { DesinformacaoComponent } from './pages/desinformacao/desinformacao.component';
-import { DireitosTrabalhistasComponent } from './pages/direitos-trabalhistas/direitos-trabalhistas.component';
 import { HomeComponent } from './pages/home/home.component';
-import { QuizComponent } from './pages/quiz/quiz.component';
-import { SobreComponent } from './pages/sobre/sobre.component';
-import { AcessoComponent } from './pages/acesso/acesso.component';
-import { PerfilComponent } from './pages/perfil/perfil.component';
-import { PostagensComponent } from './pages/postagens/postagens.component';
-import { PublicarComponent } from './pages/publicar/publicar.component';
-import { BuscarComponent } from './pages/buscar/buscar.component';
 
 export const routes: Routes = [
   // CONTEÚDO PÚBLICO: páginas educativas e quiz.
   { path: '', component: HomeComponent },
-  { path: 'democracia', component: DemocraciaComponent },
-  { path: 'desinformacao', component: DesinformacaoComponent },
-  { path: 'checagem', component: ChecagemComponent },
-  { path: 'direitos-trabalhistas', component: DireitosTrabalhistasComponent },
-  { path: 'quiz', component: QuizComponent },
-  { path: 'sobre', component: SobreComponent },
+  {
+    path: 'democracia',
+    loadComponent: () =>
+      import('./pages/democracia/democracia.component').then((m) => m.DemocraciaComponent),
+  },
+  {
+    path: 'desinformacao',
+    loadComponent: () =>
+      import('./pages/desinformacao/desinformacao.component').then((m) => m.DesinformacaoComponent),
+  },
+  {
+    path: 'checagem',
+    loadComponent: () =>
+      import('./pages/checagem/checagem.component').then((m) => m.ChecagemComponent),
+  },
+  {
+    path: 'direitos-trabalhistas',
+    loadComponent: () =>
+      import('./pages/direitos-trabalhistas/direitos-trabalhistas.component').then(
+        (m) => m.DireitosTrabalhistasComponent,
+      ),
+  },
+  {
+    path: 'quiz',
+    loadComponent: () => import('./pages/quiz/quiz.component').then((m) => m.QuizComponent),
+  },
+  {
+    path: 'sobre',
+    loadComponent: () => import('./pages/sobre/sobre.component').then((m) => m.SobreComponent),
+  },
   // COMUNIDADE: acesso, perfil, publicações e criação de posts.
-  { path: 'acesso', component: AcessoComponent },
-  { path: 'perfil', component: PerfilComponent },
-  { path: 'postagens', component: PostagensComponent },
-  { path: 'publicar', component: PublicarComponent },
-  { path: 'buscar', component: BuscarComponent },
-  { path: '**', redirectTo: '' }
+  {
+    path: 'acesso',
+    loadComponent: () => import('./pages/acesso/acesso.component').then((m) => m.AcessoComponent),
+  },
+  {
+    path: 'perfil',
+    loadComponent: () => import('./pages/perfil/perfil.component').then((m) => m.PerfilComponent),
+  },
+  {
+    path: 'postagens',
+    loadComponent: () =>
+      import('./pages/postagens/postagens.component').then((m) => m.PostagensComponent),
+  },
+  {
+    path: 'publicar',
+    loadComponent: () =>
+      import('./pages/publicar/publicar.component').then((m) => m.PublicarComponent),
+  },
+  {
+    path: 'buscar',
+    loadComponent: () => import('./pages/buscar/buscar.component').then((m) => m.BuscarComponent),
+  },
+  { path: '**', redirectTo: '' },
 ];

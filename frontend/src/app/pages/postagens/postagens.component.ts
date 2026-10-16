@@ -1,7 +1,7 @@
 // Carrega o feed público, filtra assuntos e permite curtir, comentar e excluir posts próprios.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -436,6 +436,7 @@ export class PostagensComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private route: ActivatedRoute,
+    private changeDetector: ChangeDetectorRef,
   ) {}
   // Executa a inicialização da página quando o Angular cria o componente.
   ngOnInit(): void {
@@ -457,6 +458,8 @@ export class PostagensComponent implements OnInit {
           if (id !== this.loadId) return;
           this.posts = posts;
           this.loading = false;
+          // Atualiza o feed depois da resposta HTTP no Angular sem Zone.js.
+          this.changeDetector.markForCheck();
           // Um resultado da busca pode abrir o feed já posicionado no post escolhido.
           const postId = this.route.snapshot.queryParamMap.get('post');
           if (postId)
@@ -469,6 +472,7 @@ export class PostagensComponent implements OnInit {
           if (id === this.loadId) {
             this.loading = false;
             this.error = 'Não foi possível carregar a comunidade. Tente novamente.';
+            this.changeDetector.markForCheck();
           }
         },
       });

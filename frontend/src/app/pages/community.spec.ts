@@ -91,4 +91,31 @@ describe('Busca e comunidade', () => {
     request.flush({}, { status: 503, statusText: 'Unavailable' });
     expect(component.loading).toBe(false);
   });
+
+  it('mostra a publicação no feed assim que a API responde', async () => {
+    const fixture = TestBed.createComponent(PostagensComponent);
+    fixture.detectChanges();
+    http
+      .expectOne(`${apiConfig.baseUrl}/posts/`)
+      .flush([
+        {
+          id: 42,
+          author: 'Escola',
+          title: 'Post recém-publicado',
+          content: 'Atividade da comunidade',
+          category: 'Cidadania',
+          media_type: 'image',
+          media_url: '',
+          likes_count: 0,
+          comments_count: 0,
+          liked_by_me: false,
+          is_mine: false,
+        },
+      ]);
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('#post-42').textContent).toContain(
+      'Post recém-publicado',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Carregando publicações');
+  });
 });

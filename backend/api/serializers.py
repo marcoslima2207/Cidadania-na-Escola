@@ -1,9 +1,9 @@
 # Valida os dados recebidos pela API e converte registros do banco em respostas JSON.
-from django.contrib.auth import authenticate, get_user_model
 from pathlib import Path
+
+from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 
 from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 
@@ -18,36 +18,29 @@ class LoginSerializer(serializers.Serializer):
 
     # Localiza o usuário e verifica sua senha e seu estado ativo antes de emitir um token.
     def validate(self, attrs):
-        entered_value = attrs['username']
+        entered_value = attrs["username"]
 
         user = None
-        if '@' in entered_value:
-            try:
-                user = User.objects.get(email=entered_value)
-            except User.DoesNotExist:
-                user = None
-        else:
-            try:
-                user = User.objects.get(username=entered_value)
-            except User.DoesNotExist:
-                user = None
+        field = "email" if "@" in entered_value else "username"
+        try:
+            user = User.objects.get(**{field: entered_value})
+        except User.DoesNotExist:
+            user = None
 
         # Tenta também o mecanismo padrão de autenticação quando a busca direta falha.
         if not user:
-            user = authenticate(username=entered_value, password=attrs['password'])
+            user = authenticate(username=entered_value, password=attrs["password"])
 
         if not user or not user.is_active:
-            raise serializers.ValidationError('Credenciais inválidas.')
+            raise serializers.ValidationError("Credenciais inválidas.")
 
-        if not user.check_password(attrs['password']):
-            raise serializers.ValidationError('Credenciais inválidas.')
+        if not user.check_password(attrs["password"]):
+            raise serializers.ValidationError("Credenciais inválidas.")
 
-        # Reutiliza o token da conta se ele já existir.
-        token, _ = Token.objects.get_or_create(user=user)
-        return {'token': token.key, 'user': user}
+        return {"user": user}
 
 
-# AUTENTICAÇÃO: cria usuário, username derivado do e-mail e token inicial.
+# AUTENTICAÇÃO: cria usuário e username derivado do e-mail.
 class RegisterSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=150)
     email = serializers.EmailField()
@@ -56,30 +49,29 @@ class RegisterSerializer(serializers.Serializer):
     # Recusa um e-mail já cadastrado e normaliza o endereço para letras minúsculas.
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError('Este e-mail já está cadastrado.')
+            raise serializers.ValidationError("Este e-mail já está cadastrado.")
         return value.lower()
 
-    # Cria o usuário com senha protegida, resolve usernames repetidos e retorna seu token de acesso.
+    # Cria o usuário com senha protegida e resolve usernames repetidos.
     def create(self, validated_data):
-        email = validated_data['email']
-        base_username = email.split('@')[0].lower()
+        email = validated_data["email"]
+        base_username = email.split("@")[0].lower()
         username = base_username
         suffix = 1
 
         # Acrescenta um número quando duas contas têm a mesma parte inicial do e-mail.
         while User.objects.filter(username=username).exists():
             suffix += 1
-            username = f'{base_username}{suffix}'
+            username = f"{base_username}{suffix}"
 
         # create_user transforma a senha em hash antes de gravá-la no banco.
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=validated_data['password'],
-            first_name=validated_data['name'][:150],
+            password=validated_data["password"],
+            first_name=validated_data["name"][:150],
         )
-        token, _ = Token.objects.get_or_create(user=user)
-        return {'token': token.key, 'user': user}
+        return user
 
 
 # POSTAGENS: normaliza autor, perfil, likes e comentários para o frontend.
@@ -96,20 +88,35 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['id', 'title', 'category', 'content', 'media_type', 'media_url', 'media_file', 'created_at', 'author', 'author_profile', 'is_mine', 'likes_count', 'comments_count', 'liked_by_me']
+        fields = [
+            "id",
+            "title",
+            "category",
+            "content",
+            "media_type",
+            "media_url",
+            "media_file",
+            "created_at",
+            "author",
+            "author_profile",
+            "is_mine",
+            "likes_count",
+            "comments_count",
+            "liked_by_me",
+        ]
 
     # Monta a resposta do post e apresenta o endereço do upload no campo media_url.
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['media_url'] = self.get_media_url(instance)
+        data["media_url"] = self.get_media_url(instance)
         return data
 
     # Determina o tipo da mídia enviada e limpa a URL externa quando existe um arquivo.
     def validate(self, attrs):
-        media = attrs.get('media_file')
+        media = attrs.get("media_file")
         if media:
-            attrs['media_type'] = 'video' if media.content_type.startswith('video/') else 'image'
-            attrs['media_url'] = ''
+            attrs["media_type"] = "video" if media.content_type.startswith("video/") else "image"
+            attrs["media_url"] = ""
         return attrs
 
     # Retorna o username do autor da publicação.
@@ -119,7 +126,7 @@ class PostSerializer(serializers.ModelSerializer):
     # Prioriza o arquivo enviado e mantém a URL externa para publicações antigas.
     def get_media_url(self, obj):
         if obj.media_file:
-            request = self.context.get('request')
+            request = self.context.get("request")
             return request.build_absolute_uri(obj.media_file.url) if request else obj.media_file.url
         return obj.media_url
 
@@ -127,48 +134,68 @@ class PostSerializer(serializers.ModelSerializer):
     def validate_media_file(self, value):
         if value is None:
             return value
-        allowed_types = {'image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'}
+        allowed_types = {
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "video/mp4",
+            "video/webm",
+            "video/quicktime",
+        }
         if value.content_type not in allowed_types:
-            raise serializers.ValidationError('Envie uma imagem JPG, PNG, WEBP ou um vídeo MP4, WEBM ou MOV.')
+            raise serializers.ValidationError(
+                "Envie uma imagem JPG, JPEG, JFIF, PNG, WEBP ou um vídeo MP4, WEBM ou MOV."
+            )
         extensions = {
-            'image/jpeg': {'.jpg', '.jpeg'}, 'image/png': {'.png'}, 'image/webp': {'.webp'},
-            'video/mp4': {'.mp4'}, 'video/webm': {'.webm'}, 'video/quicktime': {'.mov'},
+            "image/jpeg": {".jpg", ".jpeg", ".jfif"},
+            "image/png": {".png"},
+            "image/webp": {".webp"},
+            "video/mp4": {".mp4"},
+            "video/webm": {".webm"},
+            "video/quicktime": {".mov"},
         }
         if Path(value.name).suffix.lower() not in extensions[value.content_type]:
-            raise serializers.ValidationError('A extensão do arquivo não corresponde ao formato informado.')
+            raise serializers.ValidationError(
+                "A extensão do arquivo não corresponde ao formato informado."
+            )
         if value.size > 20 * 1024 * 1024:
-            raise serializers.ValidationError('A mídia deve ter no máximo 20 MB.')
+            raise serializers.ValidationError("A mídia deve ter no máximo 20 MB.")
         # Verifica a assinatura inicial além do MIME informado pelo navegador.
         header = value.read(32)
         # Reposiciona o arquivo para que o armazenamento salve também os bytes já lidos.
         value.seek(0)
         signatures = {
-            'image/jpeg': header.startswith(b'\xff\xd8\xff'),
-            'image/png': header.startswith(b'\x89PNG\r\n\x1a\n'),
-            'image/webp': header.startswith(b'RIFF') and header[8:12] == b'WEBP',
-            'video/mp4': header[4:8] == b'ftyp',
-            'video/quicktime': header[4:8] in (b'ftyp', b'moov', b'mdat', b'wide'),
-            'video/webm': header.startswith(b'\x1a\x45\xdf\xa3'),
+            "image/jpeg": header.startswith(b"\xff\xd8\xff"),
+            "image/png": header.startswith(b"\x89PNG\r\n\x1a\n"),
+            "image/webp": header.startswith(b"RIFF") and header[8:12] == b"WEBP",
+            "video/mp4": header[4:8] == b"ftyp",
+            "video/quicktime": header[4:8] in (b"ftyp", b"moov", b"mdat", b"wide"),
+            "video/webm": header.startswith(b"\x1a\x45\xdf\xa3"),
         }
         if not signatures[value.content_type]:
-            raise serializers.ValidationError('O conteúdo do arquivo não corresponde ao formato informado.')
+            raise serializers.ValidationError(
+                "O conteúdo do arquivo não corresponde ao formato informado."
+            )
         return value
 
     # Inclui as opções públicas do avatar e usa valores padrão quando não existe perfil.
     def get_author_profile(self, obj):
-        profile = getattr(obj.user, 'profile', None)
-        avatar_url = ''
+        profile = getattr(obj.user, "profile", None)
+        avatar_url = ""
         if profile:
             # A foto enviada aparece no feed com URL absoluta; links antigos continuam válidos.
-            avatar_url = ProfileSerializer(profile, context=self.context).get_avatar_file_url(profile) or profile.avatar_url
+            avatar_url = (
+                ProfileSerializer(profile, context=self.context).get_avatar_file_url(profile)
+                or profile.avatar_url
+            )
         return {
-            'avatar_url': avatar_url,
-            'avatar_choice': profile.avatar_choice if profile else 'portrait01',
+            "avatar_url": avatar_url,
+            "avatar_choice": profile.avatar_choice if profile else "portrait01",
         }
 
     # Compara o usuário autenticado com o autor para indicar se a publicação pertence à sessão.
     def get_is_mine(self, obj):
-        user = self.context['request'].user
+        user = self.context["request"].user
         return user.is_authenticated and obj.user_id == user.id
 
     # Retorna o número de curtidas registradas para a publicação.
@@ -181,54 +208,75 @@ class PostSerializer(serializers.ModelSerializer):
 
     # Indica se o usuário autenticado já curtiu esta publicação.
     def get_liked_by_me(self, obj):
-        user = self.context['request'].user
+        user = self.context["request"].user
         return user.is_authenticated and obj.likes.filter(user=user).exists()
 
 
 # PERFIL: expõe dados editáveis sem permitir alteração do usuário pelo cliente.
 class ProfileSerializer(serializers.ModelSerializer):
     # Identificação da conta é somente leitura; este endpoint edita apenas o perfil.
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
     avatar_file = serializers.FileField(write_only=True, required=False, allow_null=True)
     avatar_file_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
-        fields = ['username', 'email', 'bio', 'avatar_url', 'avatar_choice', 'avatar_file', 'avatar_file_url']
+        fields = [
+            "username",
+            "email",
+            "bio",
+            "avatar_url",
+            "avatar_choice",
+            "avatar_file",
+            "avatar_file_url",
+        ]
 
     # Devolve o endereço completo do upload para o frontend hospedado em outro domínio.
     def get_avatar_file_url(self, obj):
         if not obj.avatar_file:
-            return ''
-        request = self.context.get('request')
+            return ""
+        request = self.context.get("request")
         return request.build_absolute_uri(obj.avatar_file.url) if request else obj.avatar_file.url
 
     # Aceita apenas imagens de até 5 MB; extensão e assinatura devem corresponder ao MIME.
     def validate_avatar_file(self, value):
         if value is None:
             return value
-        formats = {'image/jpeg': {'.jpg', '.jpeg', '.jfif'}, 'image/png': {'.png'}, 'image/webp': {'.webp'}}
-        if value.content_type not in formats or Path(value.name).suffix.lower() not in formats[value.content_type]:
-            raise serializers.ValidationError('Envie uma foto JPG, JPEG, JFIF, PNG ou WEBP.')
+        formats = {
+            "image/jpeg": {".jpg", ".jpeg", ".jfif"},
+            "image/png": {".png"},
+            "image/webp": {".webp"},
+        }
+        if (
+            value.content_type not in formats
+            or Path(value.name).suffix.lower() not in formats[value.content_type]
+        ):
+            raise serializers.ValidationError("Envie uma foto JPG, JPEG, JFIF, PNG ou WEBP.")
         if value.size > 5 * 1024 * 1024:
-            raise serializers.ValidationError('A foto deve ter no máximo 5 MB.')
+            raise serializers.ValidationError("A foto deve ter no máximo 5 MB.")
         header = value.read(12)
         value.seek(0)
-        valid = {'image/jpeg': header.startswith(b'\xff\xd8\xff'), 'image/png': header.startswith(b'\x89PNG\r\n\x1a\n'), 'image/webp': header.startswith(b'RIFF') and header[8:12] == b'WEBP'}
+        valid = {
+            "image/jpeg": header.startswith(b"\xff\xd8\xff"),
+            "image/png": header.startswith(b"\x89PNG\r\n\x1a\n"),
+            "image/webp": header.startswith(b"RIFF") and header[8:12] == b"WEBP",
+        }
         if not valid[value.content_type]:
-            raise serializers.ValidationError('O conteúdo do arquivo não corresponde a uma foto válida.')
+            raise serializers.ValidationError(
+                "O conteúdo do arquivo não corresponde a uma foto válida."
+            )
         return value
 
     # A escolha mais recente define a aparência: upload, link ou ilustração.
     def validate(self, attrs):
-        if attrs.get('avatar_file'):
-            attrs['avatar_url'] = ''
-        elif attrs.get('avatar_url'):
-            attrs['avatar_file'] = None
-        elif 'avatar_choice' in attrs:
-            attrs['avatar_file'] = None
-            attrs['avatar_url'] = ''
+        if attrs.get("avatar_file"):
+            attrs["avatar_url"] = ""
+        elif attrs.get("avatar_url"):
+            attrs["avatar_file"] = None
+        elif "avatar_choice" in attrs:
+            attrs["avatar_file"] = None
+            attrs["avatar_url"] = ""
         return attrs
 
     # Remove a foto substituída somente depois de a atualização do banco ser confirmada.
@@ -243,12 +291,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 # COMENTÁRIOS: impede que autor e postagem sejam falsificados no payload.
 class PostCommentSerializer(serializers.ModelSerializer):
     # A view define o autor a partir da sessão e o post a partir da URL.
-    author = serializers.CharField(source='user.username', read_only=True)
+    author = serializers.CharField(source="user.username", read_only=True)
 
     class Meta:
         model = PostComment
-        fields = ['id', 'post', 'content', 'author', 'created_at']
-        read_only_fields = ['post']
+        fields = ["id", "post", "content", "author", "created_at"]
+        read_only_fields = ["post"]
 
 
 # CONTEÚDO EDUCATIVO.
@@ -256,12 +304,12 @@ class ConteudoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conteudo
         fields = [
-            'id',
-            'titulo',
-            'descricao',
-            'categoria',
-            'conteudo',
-            'data_publicacao',
+            "id",
+            "titulo",
+            "descricao",
+            "categoria",
+            "conteudo",
+            "data_publicacao",
         ]
 
 
@@ -270,14 +318,14 @@ class PerguntaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pergunta
         fields = [
-            'id',
-            'enunciado',
-            'opcao_a',
-            'opcao_b',
-            'opcao_c',
-            'alternativa_correta',
-            'categoria',
-            'criado_em',
+            "id",
+            "enunciado",
+            "opcao_a",
+            "opcao_b",
+            "opcao_c",
+            "alternativa_correta",
+            "categoria",
+            "criado_em",
         ]
 
 
@@ -286,13 +334,13 @@ class ResultadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Resultado
         fields = [
-            'id',
-            'nome',
-            'pontuacao',
-            'total_perguntas',
-            'resultado',
-            'respostas',
-            'criado_em',
+            "id",
+            "nome",
+            "pontuacao",
+            "total_perguntas",
+            "resultado",
+            "respostas",
+            "criado_em",
         ]
 
 
@@ -300,4 +348,4 @@ class ResultadoSerializer(serializers.ModelSerializer):
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = ['id', 'nome', 'email', 'criado_em']
+        fields = ["id", "nome", "email", "criado_em"]

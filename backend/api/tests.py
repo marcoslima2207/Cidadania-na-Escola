@@ -268,6 +268,16 @@ class ApiEndpointsTests(APITestCase):
         feed = self.client.get(reverse('post-list'))
         self.assertEqual(feed.data[0]['author_profile']['avatar_url'], response.data['avatar_file_url'])
 
+    # JFIF é JPEG: o formato das imagens fornecidas também precisa ser aceito nas publicações.
+    def test_post_accepts_jfif_upload(self):
+        self.client.force_authenticate(self.user)
+        image = SimpleUploadedFile('imagem.JFIF', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        response = self.client.post(reverse('post-list'), {'title': 'Foto da escola', 'content': 'Atividade', 'category': 'Cidadania', 'media_type': 'image', 'media_file': image}, format='multipart')
+        self.assertEqual(response.status_code, 201)
+        post = Post.objects.get(id=response.data['id'])
+        self.assertTrue(post.media_file.storage.exists(post.media_file.name))
+        self.assertIn('/media/posts/', response.data['media_url'])
+
     # Escolher uma ilustração precisa substituir a foto antiga em vez de ficar escondida por ela.
     def test_profile_illustration_replaces_photo_and_preserves_account(self):
         self.client.force_authenticate(self.user)

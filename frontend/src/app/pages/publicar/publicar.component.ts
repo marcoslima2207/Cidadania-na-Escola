@@ -1,7 +1,8 @@
 // Monta a publicação, apresenta a prévia do arquivo e envia texto e mídia para a API.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
+import { finalize, timeout } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
@@ -34,12 +35,18 @@ import { apiConfig } from '../../api-config';
             <option>Educação</option>
           </select></label
         ><label
-          >Tipo<select [(ngModel)]="form.media_type" (ngModelChange)="clearMedia(); mediaInput.value = ''">
+          >Tipo<select
+            [(ngModel)]="form.media_type"
+            (ngModelChange)="clearMedia(); mediaInput.value = ''"
+          >
             <option value="image">Foto</option>
             <option value="video">Vídeo</option>
           </select></label
         ><label
-          >Título<input [(ngModel)]="form.title" maxlength="200" placeholder="Dê um título à publicação" /></label
+          >Título<input
+            [(ngModel)]="form.title"
+            maxlength="200"
+            placeholder="Dê um título à publicação" /></label
         ><label
           >Texto<textarea
             [(ngModel)]="form.content"
@@ -52,11 +59,13 @@ import { apiConfig } from '../../api-config';
             type="file"
             [accept]="
               form.media_type === 'image'
-                ? 'image/jpeg,image/png,image/webp'
+                ? 'image/jpeg,image/png,image/webp,.jfif'
                 : 'video/mp4,video/webm,video/quicktime'
             "
             (change)="selectMedia($event)"
-          /><small>Até 20 MB. O arquivo será enviado para o servidor.</small></label
+          /><small
+            >Fotos JPG, JPEG, JFIF, PNG ou WEBP; vídeos MP4, WEBM ou MOV. Até 20 MB.</small
+          ></label
         >
         @if (selectedFile) {
           <p class="selected-file">Arquivo selecionado: {{ selectedFile.name }}</p>
@@ -75,7 +84,7 @@ import { apiConfig } from '../../api-config';
           {{ loading ? 'Publicando...' : 'Publicar agora' }}
         </button>
         @if (error) {
-          <p class="error">{{ error }}</p>
+          <p class="error" role="alert">{{ error }}</p>
         }
       </div>
     </section>
@@ -198,7 +207,9 @@ import { apiConfig } from '../../api-config';
 })
 export class PublicarComponent implements OnDestroy {
   // Indica se existe um token no navegador; a API confirma sua validade em cada requisição.
-  get loggedIn(): boolean { return !!localStorage.getItem('cidadania_token'); }
+  get loggedIn(): boolean {
+    return !!localStorage.getItem('cidadania_token');
+  }
   // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   form = { category: 'Cidadania', media_type: 'image', title: '', content: '', media_url: '' };
   selectedFile: File | null = null;
@@ -209,6 +220,7 @@ export class PublicarComponent implements OnDestroy {
   constructor(
     private http: HttpClient,
     private router: Router,
+    private changeDetector: ChangeDetectorRef,
   ) {}
   previewUrl = '';
   // Revoga a URL temporária da prévia e limpa a referência ao arquivo selecionado.
@@ -243,6 +255,8 @@ export class PublicarComponent implements OnDestroy {
   }
   // Valida sessão e campos, monta FormData e envia o post com o arquivo ao backend.
   publish(): void {
+    // Evita que cliques repetidos enviem a mesma publicação durante o upload.
+    if (this.loading) return;
     this.error = '';
     const token = localStorage.getItem('cidadania_token');
     if (!token) {
@@ -267,17 +281,38 @@ export class PublicarComponent implements OnDestroy {
       .post(`${this.api}/posts/`, payload, {
         headers: new HttpHeaders({ Authorization: `Token ${token}` }),
       })
+      .pipe(
+        // Libera a tela se o servidor não responder, sem reenviar automaticamente o post.
+        timeout(120_000),
+        finalize(() => {
+          this.loading = false;
+          this.changeDetector.markForCheck();
+        }),
+      )
       .subscribe({
         next: () => this.router.navigate(['/postagens']),
         error: (error) => {
-          this.loading = false;
           if (error.status === 401) {
             localStorage.removeItem('cidadania_token');
             this.error = 'Sua sessão expirou. Entre novamente para publicar.';
             return;
           }
           this.error =
+            (error.name === 'TimeoutError'
+              ? 'O servidor demorou para responder. Confira a comunidade antes de tentar publicar novamente.'
+              : '') ||
+            (error.status === 0
+              ? 'Não foi possível conectar à API. Verifique sua conexão e se o servidor está disponível.'
+              : '') ||
+            (error.status === 413
+              ? 'O servidor recusou o tamanho do arquivo. Envie uma mídia menor.'
+              : '') ||
             error?.error?.detail ||
+            error?.error?.non_field_errors?.[0] ||
+            error?.error?.title?.[0] ||
+            error?.error?.content?.[0] ||
+            error?.error?.category?.[0] ||
+            error?.error?.media_type?.[0] ||
             error?.error?.media_file?.[0] ||
             error?.error?.media_url?.[0] ||
             'Não foi possível publicar agora. Tente novamente.';
