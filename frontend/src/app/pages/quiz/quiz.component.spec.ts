@@ -2,7 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 import { apiConfig } from '../../api-config';
+import { QUIZ_REQUEST_TIMEOUT_MS } from '../../services/quiz.service';
 import { QuizComponent } from './quiz.component';
 import { AttemptResponse, Level, QuizProgress } from './quiz.models';
 
@@ -61,6 +63,7 @@ describe('Quiz gamificado', () => {
     http = TestBed.inject(HttpTestingController);
   });
   afterEach(() => {
+    vi.useRealTimers();
     http.verify();
     localStorage.clear();
   });
@@ -87,6 +90,97 @@ describe('Quiz gamificado', () => {
     expect(content).toContain('Cidadania');
     expect(content).toContain('Banco educativo');
     expect(content).not.toContain('Gerado por IA');
+  });
+
+  it('mostra os níveis enquanto o progresso e o desafio diário ainda estão carregando', () => {
+    const fixture = TestBed.createComponent(QuizComponent);
+    fixture.detectChanges();
+    http.expectOne(`${api}/nivel/`).flush([level]);
+    const progressRequest = http.expectOne(`${api}/progresso/`);
+    http.expectNone(`${api}/diario/`);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Cidadania');
+    expect(fixture.nativeElement.textContent).not.toContain('Preparando sua trilha');
+    expect(fixture.nativeElement.textContent).toContain('Carregando seu progresso');
+    expect(fixture.nativeElement.querySelector('.level-node').disabled).toBe(true);
+    progressRequest.flush(progress);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.level-node').disabled).toBe(false);
+    http
+      .expectOne(`${api}/diario/`)
+      .flush({ data: '2026-10-15', origem: 'reserva', total_perguntas: 12 });
+  });
+
+  it('mantém a trilha visível quando a sessão expira e oferece novo login', () => {
+    const fixture = TestBed.createComponent(QuizComponent);
+    fixture.detectChanges();
+    http.expectOne(`${api}/nivel/`).flush([level]);
+    http
+      .expectOne(`${api}/progresso/`)
+      .flush({ detail: 'Invalid token.' }, { status: 401, statusText: 'Unauthorized' });
+    http.expectOne(`${api}/diario/`).flush({});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Cidadania');
+    expect(fixture.nativeElement.textContent).toContain('Sua sessão expirou');
+    expect(fixture.nativeElement.querySelector('.notice a').textContent).toContain(
+      'Entrar novamente',
+    );
+    fixture.componentInstance.start(level);
+    http.expectNone(`${api}/nivel/1/iniciar/`);
+  });
+
+  it('encerra a espera pelo progresso e permite recuperar sem recarregar os níveis', async () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(QuizComponent);
+    fixture.detectChanges();
+    http.expectOne(`${api}/nivel/`).flush([level]);
+    const pendingProgress = http.expectOne(`${api}/progresso/`);
+    http.expectNone(`${api}/diario/`);
+    await vi.advanceTimersByTimeAsync(QUIZ_REQUEST_TIMEOUT_MS);
+    http.expectOne(`${api}/diario/`).flush({});
+    fixture.detectChanges();
+    expect(pendingProgress.cancelled).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('O servidor demorou para responder');
+    expect(fixture.componentInstance.levels()).toEqual([level]);
+    fixture.nativeElement.querySelector('.notice button').click();
+    http.expectOne(`${api}/progresso/`).flush({ ...progress, xp: 30 });
+    http.expectOne(`${api}/diario/`).flush({});
+    http.expectNone(`${api}/nivel/`);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.progressError()).toBe('');
+    expect(fixture.componentInstance.progress()?.xp).toBe(30);
+    expect(fixture.nativeElement.querySelector('.level-node').disabled).toBe(false);
+  });
+
+  it('oferece nova tentativa se a API de níveis não responder', async () => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    const fixture = TestBed.createComponent(QuizComponent);
+    fixture.detectChanges();
+    const pendingLevels = http.expectOne(`${api}/nivel/`);
+    http.expectNone(`${api}/diario/`);
+    await vi.advanceTimersByTimeAsync(QUIZ_REQUEST_TIMEOUT_MS);
+    fixture.detectChanges();
+    expect(pendingLevels.cancelled).toBe(true);
+    expect(fixture.componentInstance.loading()).toBe(false);
+    expect(fixture.nativeElement.textContent).not.toContain('Preparando sua trilha');
+    fixture.nativeElement.querySelector('.notice button').click();
+    http.expectOne(`${api}/nivel/`).flush([level]);
+    http.expectOne(`${api}/diario/`).flush({});
+    expect(fixture.componentInstance.levels()).toEqual([level]);
+  });
+
+  it('libera o botão após timeout ao iniciar, sem repetir automaticamente a requisição', async () => {
+    vi.useFakeTimers();
+    const component = create().componentInstance;
+    component.start(level);
+    const pendingStart = http.expectOne(`${api}/nivel/1/iniciar/`);
+    await vi.advanceTimersByTimeAsync(QUIZ_REQUEST_TIMEOUT_MS);
+    expect(pendingStart.cancelled).toBe(true);
+    expect(component.busy()).toBe(false);
+    expect(component.view()).toBe('trail');
+    expect(component.error()).toContain('O servidor demorou para responder');
+    http.expectNone(`${api}/nivel/1/iniciar/`);
   });
 
   it('atualiza corações e barra ao conferir, mantendo a pergunta até continuar', () => {
@@ -151,17 +245,15 @@ describe('Quiz gamificado', () => {
     http.expectOne(`${api}/nivel/1/iniciar/`).flush(session);
     component.selected.set('b');
     component.submitAnswer();
-    http
-      .expectOne(`${api}/tentativas/8/responder/`)
-      .flush({
-        ...session,
-        progresso: { ...progress, vidas: 0 },
-        tentativa: { ...session.tentativa, concluida: true, respondidas: 1 },
-        alternativa: 'b',
-        correta: false,
-        alternativa_correta: 'a',
-        explicacao: 'A resposta correta é participar.',
-      });
+    http.expectOne(`${api}/tentativas/8/responder/`).flush({
+      ...session,
+      progresso: { ...progress, vidas: 0 },
+      tentativa: { ...session.tentativa, concluida: true, respondidas: 1 },
+      alternativa: 'b',
+      correta: false,
+      alternativa_correta: 'a',
+      explicacao: 'A resposta correta é participar.',
+    });
     component.continueLesson();
     expect(component.view()).toBe('result');
   });

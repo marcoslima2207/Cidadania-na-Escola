@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -14,7 +15,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
+import { Subscription, TimeoutError } from 'rxjs';
 import { apiErrorMessage } from '../../services/api-error';
 import { AuthService } from '../../services/auth.service';
 import { QuizService } from '../../services/quiz.service';
@@ -35,6 +36,9 @@ export class QuizComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly contentFocus = viewChild<ElementRef<HTMLElement>>('contentFocus');
+  private trailRequest?: Subscription;
+  private progressRequest?: Subscription;
+  private dailyRequest?: Subscription;
   readonly levels = signal<Level[]>([]);
   readonly progress = signal<QuizProgress | null>(null);
   readonly daily = signal<DailyQuiz | null>(null);
@@ -44,6 +48,9 @@ export class QuizComponent implements OnInit {
   readonly busy = signal(false);
   readonly error = signal('');
   readonly dailyError = signal('');
+  readonly progressLoading = signal(false);
+  readonly progressError = signal('');
+  readonly sessionExpired = signal(false);
   readonly currentIndex = signal(0);
   readonly selected = signal<Answer | null>(null);
   readonly feedback = signal<AnswerFeedback | null>(null);
@@ -75,32 +82,71 @@ export class QuizComponent implements OnInit {
   }
 
   load(): void {
+    this.trailRequest?.unsubscribe();
     this.loading.set(true);
     this.error.set('');
-    forkJoin({
-      levels: this.api.levels(),
-      progress: this.auth.loggedIn ? this.api.progress() : of(null),
-    })
+    this.loadProgress();
+    this.trailRequest = this.api
+      .levels()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (data) => {
-          this.levels.set(data.levels);
-          this.progress.set(data.progress);
+        next: (levels) => {
+          this.levels.set(levels);
           this.loading.set(false);
+          this.loadDailyWhenReady();
         },
         error: (error) => {
           this.loading.set(false);
           this.error.set(
-            apiErrorMessage(error, 'Não foi possível carregar a trilha. Tente novamente.'),
+            this.requestError(error, 'Não foi possível carregar a trilha. Tente novamente.'),
           );
         },
       });
-    this.loadDaily();
+  }
+
+  loadProgress(): void {
+    this.progressRequest?.unsubscribe();
+    this.progressError.set('');
+    this.sessionExpired.set(false);
+    this.progressLoading.set(this.auth.loggedIn);
+    if (!this.auth.loggedIn) {
+      this.progress.set(null);
+      return;
+    }
+    this.progressRequest = this.api
+      .progress()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (progress) => {
+          this.progress.set(progress);
+          this.progressLoading.set(false);
+          this.loadDailyWhenReady();
+        },
+        error: (error) => {
+          this.progressLoading.set(false);
+          this.sessionExpired.set(error instanceof HttpErrorResponse && error.status === 401);
+          this.progressError.set(
+            this.sessionExpired()
+              ? 'Sua sessão expirou. Entre novamente para jogar.'
+              : this.requestError(
+                  error,
+                  'Não foi possível carregar seu progresso. Tente novamente.',
+                ),
+          );
+          this.loadDailyWhenReady();
+        },
+      });
+  }
+
+  private loadDailyWhenReady(): void {
+    // A geração diária pode gravar no banco; priorize a trilha e o progresso.
+    if (!this.loading() && !this.progressLoading() && !this.error()) this.loadDaily();
   }
 
   loadDaily(): void {
+    this.dailyRequest?.unsubscribe();
     this.dailyError.set('');
-    this.api
+    this.dailyRequest = this.api
       .daily()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -116,6 +162,7 @@ export class QuizComponent implements OnInit {
       this.error.set('Entre na sua conta para jogar e salvar sua evolução.');
       return;
     }
+    if (this.progressLoading() || this.progressError()) return;
     this.error.set('');
     this.busy.set(true);
     this.api
@@ -136,7 +183,7 @@ export class QuizComponent implements OnInit {
         error: (error) => {
           this.busy.set(false);
           this.error.set(
-            apiErrorMessage(error, 'Não foi possível iniciar a lição. Tente novamente.'),
+            this.requestError(error, 'Não foi possível iniciar a lição. Tente novamente.'),
           );
         },
       });
@@ -162,7 +209,7 @@ export class QuizComponent implements OnInit {
         error: (error) => {
           this.busy.set(false);
           this.error.set(
-            apiErrorMessage(error, 'Não foi possível verificar a resposta. Tente novamente.'),
+            this.requestError(error, 'Não foi possível verificar a resposta. Tente novamente.'),
           );
         },
       });
@@ -183,6 +230,12 @@ export class QuizComponent implements OnInit {
 
   private focusContent(): void {
     afterNextRender(() => this.contentFocus()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  private requestError(error: unknown, fallback: string): string {
+    return error instanceof TimeoutError
+      ? 'O servidor demorou para responder. Tente novamente em alguns instantes.'
+      : apiErrorMessage(error, fallback);
   }
 
   backToTrail(): void {

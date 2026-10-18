@@ -35,6 +35,19 @@
     </div>
   }
   @if (view() === 'trail') {
+    @if (progressLoading()) {
+      <div class="notice" role="status">Carregando seu progresso...</div>
+    }
+    @if (progressError()) {
+      <div class="notice error" role="alert">
+        <p>{{ progressError() }}</p>
+        @if (sessionExpired()) {
+          <a routerLink="/acesso">Entrar novamente</a>
+        } @else {
+          <button class="button secondary" (click)="loadProgress()">Recarregar progresso</button>
+        }
+      </div>
+    }
     @if (loading()) {
       <div class="panel loading" role="status">Preparando sua trilha...</div>
     } @else {
@@ -63,7 +76,10 @@
                       [class.completed]="completed().has(level.id)"
                       [class.current]="!completed().has(level.id) && level.id === nextLevel()"
                       [disabled]="
-                        busy() || (!completed().has(level.id) && level.id !== nextLevel())
+                        busy() ||
+                        progressLoading() ||
+                        !!progressError() ||
+                        (!completed().has(level.id) && level.id !== nextLevel())
                       "
                       [attr.aria-label]="
                         level.titulo +
@@ -115,7 +131,7 @@
                 type="button"
                 class="button primary"
                 (click)="start(null)"
-                [disabled]="busy()"
+                [disabled]="busy() || progressLoading() || !!progressError()"
               >
                 {{ busy() ? 'Preparando...' : 'Aceitar o desafio' }}
               </button>
