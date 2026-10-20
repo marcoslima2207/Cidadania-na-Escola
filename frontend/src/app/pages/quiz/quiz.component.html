@@ -1,28 +1,67 @@
 <section class="quiz" aria-labelledby="quiz-title">
   <header class="quiz-header">
     <div>
-      <p class="eyebrow">Quiz • Aprenda um pouco a cada dia</p>
+      <p class="eyebrow">Quiz educativo</p>
       <h1 id="quiz-title">Sua trilha cidadã</h1>
       <p>Pequenos passos. Novas descobertas. Uma cidadania mais forte.</p>
     </div>
-    <span class="header-symbol" aria-hidden="true">✦</span>
+    <img
+      class="header-illustration"
+      src="illustrations/learning-together.webp"
+      alt=""
+      width="900"
+      height="600"
+    />
   </header>
   <div class="stats" aria-label="Seu progresso">
-    <div class="hearts" [attr.aria-label]="(progress()?.vidas ?? 5) + ' de 5 corações'">
-      @for (heart of hearts(); track heart) {
-        <span aria-hidden="true" [class.empty]="heart >= (progress()?.vidas ?? 5)">♥</span>
+    <div
+      class="hearts"
+      [attr.aria-label]="
+        progress()
+          ? progress()!.vidas + ' de ' + progress()!.max_vidas + ' corações'
+          : 'Entre para acompanhar suas vidas'
+      "
+    >
+      @if (progress(); as actualProgress) {
+        @for (heart of hearts(); track heart) {
+          <span aria-hidden="true" [class.empty]="heart >= actualProgress.vidas">♥</span>
+        }
+      } @else {
+        <strong>—</strong>
       }
       <small>Vidas do dia</small>
     </div>
     <div>
-      <strong class="xp">⚡ {{ progress()?.xp ?? 0 }}</strong
+      <strong class="xp"><app-icon name="bolt" /> {{ progress()?.xp ?? '—' }}</strong
       ><small>XP conquistado</small>
     </div>
     <div>
-      <strong>{{ completed().size }} / {{ levels().length }}</strong
+      <strong>{{ progress() ? completed().size : '—' }} / {{ levels().length || '—' }}</strong
       ><small>Lições concluídas</small>
     </div>
+    <div class="overall-stat">
+      <strong>{{ progress() && levels().length ? overallPercent() + '%' : '—' }}</strong
+      ><small>Progresso na trilha</small>
+      @if (progress() && levels().length) {
+        <div
+          class="overall-track"
+          role="progressbar"
+          aria-label="Progresso na trilha"
+          [attr.aria-valuenow]="overallPercent()"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
+          <span [style.width.%]="overallPercent()"></span>
+        </div>
+      }
+    </div>
   </div>
+  @if (!auth.loggedIn) {
+    <p class="guest-notice">
+      <app-icon name="book" /> Explore a trilha.
+      <a routerLink="/acesso">Entre para jogar e acompanhar seu progresso.</a>
+    </p>
+  }
   @if (error()) {
     <div class="notice error" role="alert">
       <p>{{ error() }}</p>
@@ -55,12 +94,18 @@
         <div class="trail">
           <div class="section-heading">
             <p class="eyebrow">Um passo de cada vez</p>
-            <h2>Explore, aprenda, avance</h2>
+            <h2>Continue sua jornada</h2>
           </div>
           @for (group of topics(); track group.topic.id; let topicIndex = $index) {
-            <section class="topic" [attr.aria-labelledby]="'topic-' + group.topic.id">
+            <section
+              class="topic"
+              [class.is-locked]="
+                !completed().has(group.levels[0].id) && group.levels[0].id !== nextLevel()
+              "
+              [attr.aria-labelledby]="'topic-' + group.topic.id"
+            >
               <div class="topic-header">
-                <span aria-hidden="true">{{ group.topic.icone }}</span>
+                <span class="topic-symbol"><app-icon [name]="topicIcon(group.topic.slug)" /></span>
                 <div>
                   <small>UNIDADE {{ topicIndex + 1 }}</small>
                   <h3 [id]="'topic-' + group.topic.id">{{ group.topic.nome }}</h3>
@@ -91,12 +136,18 @@
                       "
                       (click)="start(level)"
                     >
-                      <span aria-hidden="true">{{
-                        completed().has(level.id) ? '✓' : level.id === nextLevel() ? '★' : '🔒'
-                      }}</span>
+                      <app-icon
+                        [name]="
+                          completed().has(level.id)
+                            ? 'check'
+                            : level.id === nextLevel()
+                              ? 'play'
+                              : 'lock'
+                        "
+                      />
                     </button>
                     <div class="level-label">
-                      <strong>{{ index === 0 ? 'Primeiros passos' : 'Na prática' }}</strong>
+                      <strong>{{ level.titulo }}</strong>
                       <small
                         >{{ level.total_perguntas }} perguntas ·
                         {{
@@ -118,11 +169,16 @@
         </div>
         <aside class="sidebar">
           <div class="panel daily-card">
-            <span class="daily-icon" aria-hidden="true">☀</span>
+            <span class="daily-icon"><app-icon name="trophy" /></span>
             <p class="eyebrow">Uma nova chance de aprender</p>
             <h2>Desafio diário</h2>
             @if (daily(); as dailyQuiz) {
               <p>{{ dailyQuiz.total_perguntas }} perguntas para explorar todos os temas.</p>
+              @if (dailyCompletedDate() === dailyQuiz.data) {
+                <p class="daily-completed" role="status">
+                  <app-icon name="check" /> Desafio concluído nesta sessão!
+                </p>
+              }
               <p class="source">
                 {{ dailyQuiz.data | date: 'dd/MM/yyyy' : 'UTC' }} ·
                 {{ dailyQuiz.origem === 'ia' ? 'Gerado por IA' : 'Banco educativo' }}
@@ -133,7 +189,14 @@
                 (click)="start(null)"
                 [disabled]="busy() || progressLoading() || !!progressError()"
               >
-                {{ busy() ? 'Preparando...' : 'Aceitar o desafio' }}
+                {{
+                  busy()
+                    ? 'Preparando...'
+                    : dailyCompletedDate() === dailyQuiz.data
+                      ? 'Praticar novamente'
+                      : 'Iniciar desafio'
+                }}
+                <app-icon name="arrow" />
               </button>
             } @else if (!dailyError()) {
               <p role="status">Preparando o desafio de hoje...</p>

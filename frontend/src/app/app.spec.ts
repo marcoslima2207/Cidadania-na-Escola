@@ -25,4 +25,18 @@ describe('App', () => {
     expect(compiled.querySelector('app-header')).toBeTruthy();
     expect(compiled.querySelector('app-footer')).toBeTruthy();
   });
+
+  it('move o foco para o conteúdo pelo atalho de teclado sem navegar para outra rota', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const main = root.querySelector<HTMLElement>('#main-content')!;
+    const skip = root.querySelector<HTMLAnchorElement>('.skip-link')!;
+    const currentUrl = window.location.href;
+
+    skip.click();
+
+    expect(document.activeElement).toBe(main);
+    expect(window.location.href).toBe(currentUrl);
+  });
 });

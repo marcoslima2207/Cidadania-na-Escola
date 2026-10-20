@@ -47,6 +47,22 @@ describe('Busca e comunidade', () => {
     expect(component.searched).toBe(false);
   });
 
+  it('combina texto e categoria e ignora respostas antigas da busca', () => {
+    const component = TestBed.createComponent(BuscarComponent).componentInstance;
+    component.searchTopic('participar');
+    const previous = http.expectOne((r) => r.params.get('search') === 'participar');
+    component.filterCategory('Democracia');
+    const current = http.expectOne(
+      (r) => r.params.get('search') === 'participar' && r.params.get('category') === 'Democracia',
+    );
+    const post = { id: 7, title: 'Participar', category: 'Democracia', content: 'Texto' };
+    current.flush([post]);
+    previous.flush([]);
+    expect(component.results).toEqual([post]);
+    expect(component.category).toBe('Democracia');
+    expect(component.loading).toBe(false);
+  });
+
   it('envia a sessão no feed e impede curtidas duplicadas durante a requisição', () => {
     localStorage.setItem('cidadania_token', 'token-teste');
     const component = TestBed.createComponent(PostagensComponent).componentInstance;
@@ -95,23 +111,21 @@ describe('Busca e comunidade', () => {
   it('mostra a publicação no feed assim que a API responde', async () => {
     const fixture = TestBed.createComponent(PostagensComponent);
     fixture.detectChanges();
-    http
-      .expectOne(`${apiConfig.baseUrl}/posts/`)
-      .flush([
-        {
-          id: 42,
-          author: 'Escola',
-          title: 'Post recém-publicado',
-          content: 'Atividade da comunidade',
-          category: 'Cidadania',
-          media_type: 'image',
-          media_url: '',
-          likes_count: 0,
-          comments_count: 0,
-          liked_by_me: false,
-          is_mine: false,
-        },
-      ]);
+    http.expectOne(`${apiConfig.baseUrl}/posts/`).flush([
+      {
+        id: 42,
+        author: 'Escola',
+        title: 'Post recém-publicado',
+        content: 'Atividade da comunidade',
+        category: 'Cidadania',
+        media_type: 'image',
+        media_url: '',
+        likes_count: 0,
+        comments_count: 0,
+        liked_by_me: false,
+        is_mine: false,
+      },
+    ]);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('#post-42').textContent).toContain(
       'Post recém-publicado',

@@ -1,0 +1,244 @@
+<section class="posts-page ce-container" aria-labelledby="community-title">
+  <header class="posts-head">
+    <div>
+      <p class="ce-eyebrow">Aprender em comunidade</p>
+      <h1 class="ce-title" id="community-title">Comunidade</h1>
+      <p>Ideias, informação e conversa pública em um só lugar.</p>
+    </div>
+    <a routerLink="/publicar" class="ce-button"><app-icon name="plus" /> Publicar</a>
+  </header>
+  <div class="filters" role="group" aria-label="Filtrar publicações por assunto">
+    <button class="ce-chip" type="button" [attr.aria-pressed]="!category" (click)="setCategory('')">
+      Todos os assuntos
+    </button>
+    @for (item of categories; track item) {
+      <button
+        class="ce-chip"
+        type="button"
+        [attr.aria-pressed]="category === item"
+        (click)="setCategory(item)"
+      >
+        {{ item }}
+      </button>
+    }
+  </div>
+  @if (error) {
+    <div class="error ce-notice ce-notice--error" role="alert">{{ error }}</div>
+  }
+  @if (publicationCreated()) {
+    <div class="publication-success ce-notice ce-notice--success" role="status">
+      <app-icon name="check" /><span>Publicação enviada! Sua ideia já faz parte da comunidade.</span
+      ><button
+        type="button"
+        class="ce-button ce-button--secondary"
+        (click)="publicationCreated.set(false)"
+      >
+        Fechar
+      </button>
+    </div>
+  }
+  <div class="community-layout">
+    <div>
+      @if (loading) {
+        <p class="loading" role="status">
+          <span class="ce-spinner" aria-hidden="true"></span> Carregando publicações…
+        </p>
+        <div class="ce-skeleton feed-skeleton" aria-hidden="true"></div>
+      }
+      <section class="feed" aria-label="Publicações da comunidade" [attr.aria-busy]="loading">
+        @for (post of posts; track post.id) {
+          <article class="post ce-card" [attr.id]="'post-' + post.id">
+            <header class="post-top">
+              <div class="avatar">
+                <img
+                  [src]="
+                    post.author_profile?.avatar_url ||
+                    illustrationImage(post.author_profile?.avatar_choice)
+                  "
+                  [attr.srcset]="
+                    !post.author_profile?.avatar_url
+                      ? illustrationImage(post.author_profile?.avatar_choice).replace(
+                          '.jpg',
+                          '.webp'
+                        )
+                      : null
+                  "
+                  [alt]="'Avatar de ' + post.author"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                />
+              </div>
+              <div class="author-meta">
+                <strong>{{ post.author }}</strong>
+                @if (post.created_at) {
+                  <time [attr.datetime]="post.created_at">{{
+                    post.created_at | date: 'dd/MM/yyyy · HH:mm'
+                  }}</time>
+                }
+              </div>
+              @if (isMine(post)) {
+                <button
+                  class="delete-button"
+                  type="button"
+                  (click)="deletePost(post)"
+                  [disabled]="busy.has(post.id)"
+                  [attr.aria-label]="'Excluir publicação ' + post.title"
+                >
+                  Excluir
+                </button>
+              }
+            </header>
+            <div class="post-content" [class.has-media]="post.media_url">
+              <div class="post-copy">
+                <span
+                  class="ce-badge"
+                  [class.ce-badge--green]="
+                    post.category === 'Democracia' || post.category === 'Cidadania'
+                  "
+                  [class.ce-badge--yellow]="post.category === 'Direitos Trabalhistas'"
+                  >{{ post.category }}</span
+                >
+                <h2>{{ post.title }}</h2>
+                <p>{{ post.content }}</p>
+              </div>
+              @if (post.media_url) {
+                <div class="post-media">
+                  @if (post.media_type === 'image') {
+                    <img class="media" [src]="post.media_url" [alt]="post.title" loading="lazy" />
+                  } @else {
+                    <video
+                      class="media"
+                      [src]="post.media_url"
+                      controls
+                      playsinline
+                      preload="metadata"
+                    ></video>
+                  }
+                </div>
+              }
+            </div>
+            <div class="actions">
+              <button
+                class="action-button action-button--like"
+                type="button"
+                [class.liked]="post.liked_by_me"
+                [attr.aria-pressed]="post.liked_by_me"
+                [disabled]="busy.has(post.id)"
+                (click)="like(post)"
+              >
+                <app-icon name="heart" /><strong>{{ post.likes_count }}</strong
+                ><span>{{ post.liked_by_me ? 'Curtido' : 'Curtir' }}</span></button
+              ><button
+                class="action-button"
+                type="button"
+                [class.active]="openPost === post.id"
+                [attr.aria-expanded]="openPost === post.id"
+                [attr.aria-controls]="openPost === post.id ? 'comments-' + post.id : null"
+                (click)="toggleComments(post)"
+              >
+                <app-icon name="comment" /><strong>{{ post.comments_count }}</strong
+                ><span>Comentários</span>
+              </button>
+            </div>
+            @if (openPost === post.id) {
+              <section
+                class="comments"
+                [attr.id]="'comments-' + post.id"
+                [attr.aria-label]="'Comentários de ' + post.title"
+              >
+                @if (commentsLoading) {
+                  <p role="status">Carregando comentários…</p>
+                } @else {
+                  @for (comment of comments; track comment.id) {
+                    <article class="comment">
+                      <div>
+                        <strong>{{ comment.author }}</strong>
+                        @if (comment.created_at) {
+                          <time [attr.datetime]="comment.created_at">{{
+                            comment.created_at | date: 'dd/MM/yyyy'
+                          }}</time>
+                        }
+                      </div>
+                      <p>{{ comment.content }}</p>
+                    </article>
+                  } @empty {
+                    <p class="comments-empty">
+                      Ainda não há comentários. Que tal começar a conversa?
+                    </p>
+                  }
+                }
+                @if (loggedIn) {
+                  <form class="comment-form" (submit)="$event.preventDefault(); comment(post)">
+                    <label class="ce-sr-only" [attr.for]="'comment-text-' + post.id"
+                      >Escreva um comentário</label
+                    ><input
+                      class="ce-input"
+                      [id]="'comment-text-' + post.id"
+                      name="comment"
+                      maxlength="500"
+                      [(ngModel)]="commentText"
+                      placeholder="Escreva um comentário"
+                    /><button
+                      class="ce-button"
+                      type="submit"
+                      [disabled]="busy.has(post.id) || !commentText.trim()"
+                    >
+                      Enviar <app-icon name="arrow" />
+                    </button>
+                  </form>
+                } @else {
+                  <a class="ce-link" routerLink="/acesso">Entre para comentar ou curtir.</a>
+                }
+              </section>
+            }
+          </article>
+        } @empty {
+          @if (!loading && !error) {
+            <div class="empty ce-empty-state">
+              <app-icon name="people" />
+              <h2>
+                {{
+                  category
+                    ? 'Nenhuma publicação neste assunto'
+                    : 'Sua ideia pode começar uma conversa'
+                }}
+              </h2>
+              <p>
+                {{
+                  category
+                    ? 'Escolha outro assunto para continuar explorando.'
+                    : 'Ainda não há publicações. Seja a primeira pessoa a compartilhar uma ideia.'
+                }}
+              </p>
+              <a routerLink="/publicar" class="ce-button"
+                >Compartilhar uma ideia <app-icon name="arrow"
+              /></a>
+            </div>
+          }
+        }
+      </section>
+      @if (error && !posts.length && !loading) {
+        <button class="ce-button ce-button--secondary" type="button" (click)="load()">
+          Recarregar publicações
+        </button>
+      }
+    </div>
+    <aside class="community-sidebar">
+      <div class="ce-card">
+        <span class="sidebar-icon"><app-icon name="people" /></span>
+        <h2>Conversa boa também ensina.</h2>
+        <p>
+          Este é um espaço para compartilhar conhecimentos e aprender com diferentes pontos de
+          vista.
+        </p>
+        <ul>
+          <li>Confira a origem da informação.</li>
+          <li>Respeite quem pensa diferente.</li>
+          <li>Compartilhe com responsabilidade.</li>
+        </ul>
+      </div>
+      <a routerLink="/buscar" class="ce-link">Encontre um assunto <app-icon name="arrow" /></a>
+    </aside>
+  </div>
+</section>

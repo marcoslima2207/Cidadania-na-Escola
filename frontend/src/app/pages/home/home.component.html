@@ -1,0 +1,112 @@
+<div class="home-page ce-container">
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="hero-copy">
+      <p class="ce-eyebrow">Informação de qualidade</p>
+      <h1 id="home-title">Cidadania<br />também se <span>aprende.</span></h1>
+      <p>
+        Conteúdos, atividades e uma comunidade para construir uma sociedade mais crítica, justa e
+        participativa.
+      </p>
+      <a routerLink="/buscar" class="ce-button ce-button--accent"
+        >Explorar conteúdos <app-icon name="arrow"
+      /></a>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+      <span class="hero-shape hero-shape--blue"></span
+      ><span class="hero-shape hero-shape--green"></span
+      ><span class="hero-shape hero-shape--yellow"></span>
+      <img
+        src="illustrations/student-hero.webp"
+        alt=""
+        width="900"
+        height="1080"
+        fetchpriority="high"
+      />
+    </div>
+  </section>
+
+  <section class="topics-section" aria-labelledby="topics-title">
+    <h2 id="topics-title" class="ce-sr-only">Aprenda por assunto</h2>
+    <div class="ce-grid ce-grid--topics">
+      @for (topic of topics; track topic.path) {
+        <app-topic-card [topic]="topic" />
+      }
+    </div>
+  </section>
+
+  <section class="featured-section" aria-labelledby="featured-title" [attr.aria-busy]="loading()">
+    <div class="section-heading">
+      <div>
+        <p class="ce-eyebrow">Para continuar aprendendo</p>
+        <h2 class="ce-section-title" id="featured-title">Conteúdos em destaque</h2>
+      </div>
+      <a routerLink="/postagens" class="ce-link">Ver todos <app-icon name="arrow" /></a>
+    </div>
+    @if (loading()) {
+      <p class="ce-sr-only" role="status">Carregando conteúdos em destaque…</p>
+      <div class="ce-grid ce-grid--content" aria-hidden="true">
+        @for (i of [1, 2, 3]; track i) {
+          <div class="ce-skeleton content-skeleton"></div>
+        }
+      </div>
+    } @else if (error()) {
+      <div class="ce-notice ce-notice--error" role="alert">
+        <p>{{ error() }}</p>
+        <button class="ce-button ce-button--secondary" type="button" (click)="loadPosts()">
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (posts().length) {
+      <div
+        class="featured-track"
+        #featuredTrack
+        (scroll)="syncCarousel()"
+        tabindex="0"
+        aria-label="Publicações em destaque, deslize para explorar"
+      >
+        @for (post of posts(); track post.id) {
+          <app-post-card [post]="post" />
+        }
+      </div>
+      <div class="carousel-navigation">
+        <span>Explore as publicações da comunidade</span>
+        <div>
+          <button
+            class="ce-button ce-button--secondary carousel-button"
+            type="button"
+            (click)="moveCarousel(-1)"
+            [disabled]="!canPrevious()"
+            aria-label="Post anterior"
+          >
+            <app-icon name="back" /></button
+          ><button
+            class="ce-button ce-button--secondary carousel-button"
+            type="button"
+            (click)="moveCarousel(1)"
+            [disabled]="!canNext()"
+            aria-label="Próximo post"
+          >
+            <app-icon name="arrow" />
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="ce-empty-state">
+        <app-icon name="book" />
+        <h3>Novas descobertas começam por aqui</h3>
+        <p>Ainda não há publicações em destaque. Enquanto isso, explore os assuntos educativos.</p>
+        <a routerLink="/buscar" class="ce-link">Explorar assuntos</a>
+      </div>
+    }
+  </section>
+
+  <section class="quiz-invite">
+    <span class="quiz-invite__icon" aria-hidden="true"><app-icon name="trophy" /></span>
+    <div>
+      <p class="ce-eyebrow">Aprender também pode ser um desafio</p>
+      <h2>Um passo de cada vez na sua trilha cidadã.</h2>
+      <p>Explore os temas, teste seus conhecimentos e acompanhe sua evolução.</p>
+    </div>
+    <a routerLink="/quiz" class="ce-button">Conhecer o quiz <app-icon name="arrow" /></a>
+  </section>
+</div>

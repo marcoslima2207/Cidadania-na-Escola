@@ -1,0 +1,188 @@
+<section class="profile-page ce-container" aria-labelledby="profile-title">
+  <header class="profile-head">
+    <p class="ce-eyebrow">Meu espaço na comunidade</p>
+    <h1 id="profile-title" class="ce-title">Seu perfil</h1>
+    <p class="ce-lead">Personalize como você aparece na comunidade.</p>
+  </header>
+  @if (loading) {
+    <div class="profile-state ce-notice" role="status">
+      <span class="ce-spinner" aria-hidden="true"></span> Carregando seu perfil…
+    </div>
+  }
+  @if (error) {
+    <div class="profile-state ce-notice ce-notice--error" role="alert">
+      <strong>{{ error }}</strong
+      ><button type="button" class="ce-button ce-button--secondary" (click)="goToLogin()">
+        Entrar novamente
+      </button>
+    </div>
+  }
+  @if (profile && !loading && !error) {
+    <div class="profile-body">
+      <aside class="avatar-column ce-card">
+        <div class="avatar-preview">
+          <img
+            [src]="previewImage"
+            [attr.srcset]="
+              previewImage.startsWith('avatars/') ? previewImage.replace('.jpg', '.webp') : null
+            "
+            alt="Prévia do seu avatar"
+            (error)="imageError = true"
+            width="192"
+            height="192"
+          />
+        </div>
+        <strong>{{ profile.username }}</strong>
+        <p>Aparência na comunidade</p>
+        <input
+          #avatarInput
+          class="ce-sr-only"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,.jfif"
+          (change)="selectPhoto($event)"
+          [disabled]="saving"
+          tabindex="-1"
+          aria-label="Selecionar foto de perfil"
+        /><button
+          class="ce-button ce-button--secondary"
+          type="button"
+          (click)="setMode('upload'); avatarInput.click()"
+          [disabled]="saving"
+        >
+          <app-icon name="upload" /> Alterar foto</button
+        ><small>Escolha uma foto ou uma ilustração que tenha a ver com você.</small>
+      </aside>
+      <div class="profile-form ce-card">
+        <div class="ce-field">
+          <label class="ce-field__label" for="profile-username">Nome de usuário</label
+          ><input class="ce-input" id="profile-username" [value]="profile.username" disabled />
+        </div>
+        <div class="appearance-label">
+          <h2>Aparência na comunidade</h2>
+          <p>Escolha como você quer aparecer.</p>
+        </div>
+        <div class="photo-modes" role="group" aria-label="Origem da foto">
+          <button
+            class="ce-chip"
+            type="button"
+            [attr.aria-pressed]="mode === 'illustration'"
+            (click)="setMode('illustration')"
+            [disabled]="saving"
+          >
+            Ilustrações</button
+          ><button
+            class="ce-chip"
+            type="button"
+            [attr.aria-pressed]="mode === 'upload'"
+            (click)="setMode('upload')"
+            [disabled]="saving"
+          >
+            Enviar foto</button
+          ><button
+            class="ce-chip"
+            type="button"
+            [attr.aria-pressed]="mode === 'url'"
+            (click)="setMode('url')"
+            [disabled]="saving"
+          >
+            Usar link
+          </button>
+        </div>
+        @if (mode === 'upload') {
+          <div class="upload-zone">
+            <app-icon name="upload" /><strong>Sua foto, seu espaço</strong>
+            <p>JPG, JPEG, JFIF, PNG ou WEBP. Até 5 MB.</p>
+            <button
+              class="ce-button ce-button--secondary"
+              type="button"
+              (click)="avatarInput.click()"
+              [disabled]="saving"
+            >
+              Escolher foto
+            </button>
+            @if (selectedFile) {
+              <p class="selected-file">{{ selectedFile.name }}</p>
+            } @else if (profile.avatar_file_url) {
+              <p class="ce-field__hint">
+                Você já tem uma foto enviada. Selecione outro arquivo para substituí-la.
+              </p>
+            }
+          </div>
+        }
+        @if (mode === 'url') {
+          <div class="ce-field">
+            <label class="ce-field__label" for="avatar-url">Foto de perfil por URL</label
+            ><input
+              class="ce-input"
+              id="avatar-url"
+              type="url"
+              [(ngModel)]="profile.avatar_url"
+              (ngModelChange)="imageError = false; message = ''"
+              placeholder="https://site.com/sua-foto.jpg"
+              aria-describedby="avatar-url-hint"
+              [disabled]="saving"
+            />
+            <p id="avatar-url-hint" class="ce-field__hint">Use o link direto da imagem.</p>
+          </div>
+        }
+        <fieldset class="illustrations">
+          <legend>Ou escolha uma ilustração</legend>
+          <div class="avatar-grid">
+            @for (option of illustrations; track option.id) {
+              <button
+                type="button"
+                class="avatar-option"
+                [class.selected]="mode === 'illustration' && profile.avatar_choice === option.id"
+                [attr.aria-pressed]="mode === 'illustration' && profile.avatar_choice === option.id"
+                [attr.aria-label]="option.label"
+                (click)="chooseIllustration(option.id)"
+                [disabled]="saving"
+              >
+                <img
+                  [src]="option.image"
+                  [attr.srcset]="option.image.replace('.jpg', '.webp')"
+                  alt=""
+                  width="96"
+                  height="96"
+                  loading="lazy"
+                />
+                @if (mode === 'illustration' && profile.avatar_choice === option.id) {
+                  <span class="selected-check"><app-icon name="check" /></span>
+                }
+              </button>
+            }
+          </div>
+        </fieldset>
+        <div class="ce-field">
+          <div class="label-row">
+            <label class="ce-field__label" for="profile-bio">Bio</label
+            ><small>{{ profile.bio.length }}/240</small>
+          </div>
+          <textarea
+            class="ce-input"
+            id="profile-bio"
+            [(ngModel)]="profile.bio"
+            maxlength="240"
+            rows="3"
+            placeholder="Conte um pouco sobre você"
+            [disabled]="saving"
+          ></textarea>
+        </div>
+        @if (saveError) {
+          <p class="form-error ce-notice ce-notice--error" role="alert">{{ saveError }}</p>
+        }
+        @if (message) {
+          <p class="message ce-notice ce-notice--success" role="status">
+            <app-icon name="check" /> {{ message }}
+          </p>
+        }
+        <button class="save ce-button" type="button" [disabled]="saving" (click)="save()">
+          @if (saving) {
+            <span class="ce-spinner" aria-hidden="true"></span>
+          }
+          {{ saving ? 'Salvando…' : 'Salvar perfil' }} <app-icon name="check" />
+        </button>
+      </div>
+    </div>
+  }
+</section>

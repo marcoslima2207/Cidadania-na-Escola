@@ -1,0 +1,107 @@
+<section class="search-page ce-container" aria-labelledby="search-title">
+  <header class="search-header">
+    <p class="ce-eyebrow">Conhecimento para transformar</p>
+    <h1 id="search-title" class="ce-title">Explore assuntos</h1>
+    <p class="ce-lead">
+      Pesquise, filtre e encontre conteúdos sobre cidadania, democracia, desinformação e direitos
+      trabalhistas.
+    </p>
+  </header>
+  <form class="search-box" (submit)="$event.preventDefault(); search()" role="search">
+    <app-icon name="search" /><label class="ce-sr-only" for="content-search"
+      >Pesquisar assuntos e publicações</label
+    >
+    <input
+      class="ce-input"
+      id="content-search"
+      [(ngModel)]="term"
+      name="term"
+      placeholder="O que você quer descobrir?"
+      type="search"
+    />
+    <button type="submit" class="ce-button" aria-label="Pesquisar">
+      <app-icon name="search" /><span>Pesquisar</span>
+    </button>
+  </form>
+  <div class="search-filters" role="group" aria-label="Filtrar por categoria">
+    <button
+      type="button"
+      class="ce-chip"
+      [attr.aria-pressed]="category === ''"
+      (click)="filterCategory('')"
+    >
+      Todos
+    </button>
+    @for (item of categories; track item) {
+      <button
+        type="button"
+        class="ce-chip"
+        [attr.aria-pressed]="category === item"
+        (click)="filterCategory(item)"
+      >
+        {{ item }}
+      </button>
+    }
+  </div>
+  <div class="ce-grid ce-grid--topics topics-grid">
+    @for (topic of topics; track topic.path) {
+      <app-topic-card [topic]="topic" />
+    }
+  </div>
+  @if (error) {
+    <div class="ce-notice ce-notice--error" role="alert">
+      {{ error
+      }}<button type="button" class="ce-button ce-button--secondary" (click)="retry()">
+        Tentar novamente
+      </button>
+    </div>
+  }
+  @if (searched) {
+    <section class="results-summary" aria-label="Resumo da busca">
+      <span class="ce-eyebrow">Resultado da busca</span>
+      <h2>{{ searchedTerm }}</h2>
+      @if (meaning) {
+        <p class="meaning"><strong>Significado:</strong> {{ meaning }}</p>
+      } @else if (term.trim()) {
+        <p class="meaning">
+          Ainda não há uma definição de “{{ searchedTerm }}” no glossário do projeto. Veja abaixo as
+          publicações relacionadas.
+        </p>
+      }
+    </section>
+  }
+  <section class="results-section" [attr.aria-busy]="loading" aria-labelledby="results-title">
+    <div class="results-heading">
+      <h2 id="results-title" class="ce-section-title">
+        {{ searched ? 'Publicações encontradas' : 'Resultados recentes' }}
+      </h2>
+      <a class="ce-link" routerLink="/postagens">Ver comunidade <app-icon name="arrow" /></a>
+    </div>
+    @if (loading) {
+      <p role="status" class="loading-text">
+        <span class="ce-spinner" aria-hidden="true"></span> Buscando publicações…
+      </p>
+      <div class="ce-skeleton result-skeleton" aria-hidden="true"></div>
+    } @else if (!error) {
+      <div class="results-list">
+        @for (post of searched ? results : recent; track post.id) {
+          <app-post-card [post]="post" [compact]="true" />
+        } @empty {
+          <div class="ce-empty-state">
+            <app-icon name="search" />
+            <h3>
+              {{ searched ? 'Nenhum conteúdo encontrado' : 'Os próximos conteúdos aparecem aqui' }}
+            </h3>
+            <p>
+              {{
+                searched
+                  ? 'Tente outra palavra ou escolha uma categoria diferente.'
+                  : 'Ainda não há publicações. Explore os assuntos acima para continuar aprendendo.'
+              }}
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</section>

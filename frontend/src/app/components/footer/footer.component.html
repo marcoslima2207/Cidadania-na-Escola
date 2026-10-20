@@ -1,0 +1,32 @@
+<footer class="site-footer">
+  <div class="footer-main ce-container">
+    <div class="footer-brand">
+      <a class="brand-link" routerLink="/" aria-label="Cidadania na Escola — página inicial">
+        <app-brand />
+      </a>
+      <p>Informação de qualidade<br />também é conquista.</p>
+    </div>
+
+    <nav class="footer-navigation" aria-label="Explore os conteúdos">
+      <h2>Continue explorando</h2>
+      <ul>
+        @for (item of links; track item.path) {
+          <li>
+            <a [routerLink]="item.path">{{ item.label }}</a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="footer-about">
+      <span class="footer-eyebrow">Educação e participação</span>
+      <p>Conhecimento acessível para fortalecer a cidadania e a leitura crítica da informação.</p>
+      <a routerLink="/sobre" class="ce-link">Conheça o projeto <span aria-hidden="true">→</span></a>
+    </div>
+  </div>
+
+  <div class="footer-bottom ce-container">
+    <p>© {{ year }} Cidadania na Escola</p>
+    <span>Projeto de extensão · Código Cidadão</span>
+  </div>
+</footer>

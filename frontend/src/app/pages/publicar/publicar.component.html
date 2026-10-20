@@ -1,0 +1,163 @@
+<section class="publish-page ce-container" aria-labelledby="publish-title">
+  <header class="publish-head">
+    <p class="ce-eyebrow">Sua voz faz parte</p>
+    <h1 id="publish-title" class="ce-title">Compartilhe<br />uma ideia que transforma.</h1>
+    <p class="ce-lead">
+      Publique fotos, vídeos e reflexões sobre cidadania, democracia e informação.
+    </p>
+  </header>
+  @if (!loggedIn) {
+    <p class="ce-notice">
+      <a class="ce-link" routerLink="/acesso">Entre ou crie uma conta para publicar.</a>
+    </p>
+  }
+  <div class="publish-layout">
+    <form class="form ce-card" (ngSubmit)="publish()" novalidate [attr.aria-busy]="loading">
+      <div class="form-row">
+        <div class="ce-field">
+          <label class="ce-field__label" for="post-category">Categoria</label
+          ><select
+            class="ce-input"
+            id="post-category"
+            name="category"
+            [(ngModel)]="form.category"
+            [disabled]="loading"
+          >
+            @for (item of categories; track item) {
+              <option>{{ item }}</option>
+            }
+          </select>
+        </div>
+        <div class="ce-field">
+          <label class="ce-field__label" for="post-type">Tipo de publicação</label
+          ><select
+            class="ce-input"
+            id="post-type"
+            name="type"
+            [(ngModel)]="form.media_type"
+            (ngModelChange)="clearMedia(); mediaInput.value = ''"
+            [disabled]="loading"
+          >
+            <option value="image">Foto</option>
+            <option value="video">Vídeo</option>
+          </select>
+        </div>
+      </div>
+      <div class="ce-field">
+        <div class="label-row">
+          <label class="ce-field__label" for="post-title">Título</label
+          ><small>{{ form.title.length }}/200</small>
+        </div>
+        <input
+          class="ce-input"
+          id="post-title"
+          name="title"
+          [(ngModel)]="form.title"
+          maxlength="200"
+          placeholder="Dê um título à sua publicação"
+          aria-required="true"
+          [attr.aria-invalid]="(submitted && !form.title.trim()) || !!fieldErrors['title']"
+          [attr.aria-describedby]="fieldErrors['title'] ? 'post-title-error' : null"
+          [disabled]="loading"
+        />
+        @if (fieldErrors['title']) {
+          <p class="ce-field__error" id="post-title-error">{{ fieldErrors['title'] }}</p>
+        }
+      </div>
+      <div class="ce-field">
+        <label class="ce-field__label" for="post-content">Texto</label
+        ><textarea
+          class="ce-input"
+          id="post-content"
+          name="content"
+          [(ngModel)]="form.content"
+          rows="7"
+          placeholder="O que você gostaria de compartilhar?"
+          aria-required="true"
+          [attr.aria-invalid]="(submitted && !form.content.trim()) || !!fieldErrors['content']"
+          [attr.aria-describedby]="fieldErrors['content'] ? 'post-content-error' : null"
+          [disabled]="loading"
+        ></textarea>
+        @if (fieldErrors['content']) {
+          <p class="ce-field__error" id="post-content-error">{{ fieldErrors['content'] }}</p>
+        }
+      </div>
+      <div class="ce-field">
+        <label class="ce-field__label" for="post-media"
+          >Foto ou vídeo do dispositivo <span class="optional">(opcional)</span></label
+        >
+        <div class="upload-zone">
+          <span class="upload-icon"><app-icon name="upload" /></span
+          ><strong>Uma imagem também conta uma história</strong
+          ><span>Selecione um arquivo para adicionar à publicação.</span
+          ><input
+            #mediaInput
+            id="post-media"
+            name="media"
+            type="file"
+            [accept]="
+              form.media_type === 'image'
+                ? 'image/jpeg,image/png,image/webp,.jfif'
+                : 'video/mp4,video/webm,video/quicktime'
+            "
+            (change)="selectMedia($event)"
+            [disabled]="loading"
+            aria-describedby="media-hint"
+          /><small id="media-hint"
+            >JPG, JPEG, JFIF, PNG ou WEBP · MP4, WEBM ou MOV · Até 20 MB.</small
+          >
+        </div>
+        <p class="ce-field__hint">Sem anexo, sua publicação será composta apenas por texto.</p>
+      </div>
+      @if (selectedFile) {
+        <p class="selected-file"><app-icon name="check" /> {{ selectedFile.name }}</p>
+      }
+      @if (previewUrl) {
+        <div class="preview-frame">
+          @if (form.media_type === 'image') {
+            <img class="preview" [src]="previewUrl" alt="Prévia da foto selecionada" />
+          } @else {
+            <video class="preview" [src]="previewUrl" controls preload="metadata"></video>
+          }
+          <button
+            class="ce-button ce-button--secondary"
+            type="button"
+            (click)="clearMedia(); mediaInput.value = ''"
+            [disabled]="loading"
+          >
+            Remover arquivo
+          </button>
+        </div>
+      }
+      @if (error) {
+        <p class="error ce-notice ce-notice--error" role="alert">{{ error }}</p>
+      }
+      <button class="ce-button publish-submit" type="submit" [disabled]="loading">
+        @if (loading) {
+          <span class="ce-spinner" aria-hidden="true"></span>
+        }
+        {{ loading ? 'Publicando…' : 'Publicar agora' }} <app-icon name="arrow" />
+      </button>
+    </form>
+    <aside class="publish-sidebar">
+      <div class="tips-card ce-card">
+        <span class="tips-icon"><app-icon name="book" /></span>
+        <h2>Dicas para uma boa publicação</h2>
+        <ul>
+          <li>Use um título claro.</li>
+          <li>Compartilhe informações confiáveis.</li>
+          <li>Respeite outras pessoas.</li>
+          <li>Evite discurso de ódio.</li>
+        </ul>
+      </div>
+      <img
+        src="illustrations/learning-together.webp"
+        alt=""
+        width="900"
+        height="600"
+        loading="lazy"
+      />
+      <p>Conhecimento compartilhado transforma a comunidade.</p>
+    </aside>
+  </div>
+</section>

@@ -1,0 +1,91 @@
+<section class="access-page ce-container" aria-labelledby="access-title">
+  <div class="access-card">
+    <div class="access-intro">
+      <p class="eyebrow">Comunidade cidadã</p>
+      <h1 id="access-title">{{ mode === 'login' ? 'Bem-vindo de volta.' : 'Crie seu espaço.' }}</h1>
+      <p>Participe das conversas, compartilhe informação e acompanhe ideias que transformam.</p>
+      <img src="illustrations/learning-together.webp" alt="" width="900" height="600" />
+    </div>
+    <form class="access-form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="loading()">
+      <div class="mode-switch" role="group" aria-label="Tipo de acesso">
+        <button
+          type="button"
+          [class.active]="mode === 'login'"
+          [attr.aria-pressed]="mode === 'login'"
+          (click)="setMode('login')"
+        >
+          Entrar</button
+        ><button
+          type="button"
+          [class.active]="mode === 'register'"
+          [attr.aria-pressed]="mode === 'register'"
+          (click)="setMode('register')"
+        >
+          Criar conta
+        </button>
+      </div>
+      @if (mode === 'register') {
+        <div class="ce-field">
+          <label for="access-name">Nome</label
+          ><input
+            class="ce-input"
+            id="access-name"
+            name="name"
+            [(ngModel)]="registerForm.name"
+            placeholder="Seu nome"
+            autocomplete="name"
+            [disabled]="loading()"
+          />
+        </div>
+      }
+      <div class="ce-field">
+        <label for="access-email">{{
+          mode === 'login' ? 'E-mail ou nome de usuário' : 'E-mail'
+        }}</label
+        ><input
+          class="ce-input"
+          id="access-email"
+          name="email"
+          [type]="mode === 'login' ? 'text' : 'email'"
+          [(ngModel)]="email"
+          [placeholder]="mode === 'login' ? 'nome@exemplo.com ou usuário' : 'nome@exemplo.com'"
+          autocomplete="username"
+          [disabled]="loading()"
+        />
+      </div>
+      <div class="ce-field">
+        <label for="access-password">Senha</label>
+        <div class="password-field">
+          <input
+            class="ce-input"
+            id="access-password"
+            name="password"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            placeholder="Mínimo de 8 caracteres"
+            [attr.autocomplete]="mode === 'login' ? 'current-password' : 'new-password'"
+            [disabled]="loading()"
+          /><button
+            type="button"
+            (click)="showPassword = !showPassword"
+            [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+          >
+            {{ showPassword ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </div>
+      <button class="submit ce-button" type="submit" [disabled]="loading()">
+        @if (loading()) {
+          <span class="ce-spinner" aria-hidden="true"></span>
+        }
+        {{ loading() ? 'Aguarde…' : mode === 'login' ? 'Entrar' : 'Criar conta' }}
+      </button>
+      @if (error()) {
+        <p class="error ce-notice ce-notice--error" role="alert">{{ error() }}</p>
+      }
+      <app-google-login (authenticated)="completeAccess()" /><a routerLink="/" class="ce-link"
+        >Voltar para o início</a
+      >
+    </form>
+  </div>
+</section>
