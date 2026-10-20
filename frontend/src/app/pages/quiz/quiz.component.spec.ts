@@ -266,4 +266,46 @@ describe('Quiz gamificado', () => {
     expect(component.error()).toContain('Entre na sua conta');
     expect(component.view()).toBe('trail');
   });
+
+  it('marca o desafio diário somente após aprovação confirmada pela API', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.start(null);
+    const dailySession = {
+      ...session,
+      tentativa: { ...session.tentativa, nivel: null, diario: 2 },
+    };
+    http
+      .expectOne((request) => request.url === `${api}/diario/` && request.method === 'POST')
+      .flush(dailySession);
+    expect(component.dailyCompletedDate()).toBeNull();
+    component.selected.set('a');
+    component.submitAnswer();
+    http.expectOne(`${api}/tentativas/8/responder/`).flush({
+      ...dailySession,
+      progresso: { ...progress, xp: 30 },
+      tentativa: {
+        ...dailySession.tentativa,
+        concluida: true,
+        aprovado: true,
+        respondidas: 3,
+        acertos: 3,
+        xp_ganho: 30,
+      },
+      alternativa: 'a',
+      correta: true,
+      alternativa_correta: 'a',
+      explicacao: 'Muito bem.',
+    });
+    component.continueLesson();
+    component.backToTrail();
+    http.expectOne(`${api}/nivel/`).flush([level]);
+    http.expectOne(`${api}/progresso/`).flush({ ...progress, xp: 30 });
+    http
+      .expectOne(`${api}/diario/`)
+      .flush({ data: '2026-10-15', origem: 'reserva', total_perguntas: 12 });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Desafio concluído nesta sessão!');
+    expect(component.progress()?.xp).toBe(30);
+  });
 });

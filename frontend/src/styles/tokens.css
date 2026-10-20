@@ -1,0 +1,115 @@
+/* Fonte única da identidade visual; os componentes usam os tokens semânticos abaixo. */
+:root {
+  color-scheme: light;
+
+  /* Paleta institucional oficial. */
+  --ce-color-blue: #002d9a;
+  --ce-color-green: #0a901c;
+  --ce-color-yellow: #e7b400;
+  --ce-color-cream: #fffcf7;
+  --ce-color-vibrant: #0047f1;
+  --ce-color-neutral: #b4b4b4;
+  --ce-color-white: #ffffff;
+  --ce-blue-rgb: 0, 45, 154;
+  --ce-green-rgb: 10, 144, 28;
+  --ce-yellow-rgb: 231, 180, 0;
+  --ce-neutral-rgb: 180, 180, 180;
+
+  /* Tons sólidos derivados: textos legíveis e estados sem depender de transparências. */
+  --ce-color-blue-hover: #002683;
+  --ce-color-blue-pressed: #001f6c;
+  --ce-color-green-ink: #076514;
+  --ce-color-yellow-hover: #d6a700;
+  --ce-color-yellow-pressed: #cca000;
+  --ce-color-yellow-ink: #735a00;
+  --ce-color-blue-soft: #f0f4ff;
+  --ce-color-green-soft: #edf7ee;
+  --ce-color-yellow-soft: #fff8df;
+  --ce-color-neutral-soft: #f5f5f5;
+
+  /* Funções visuais: mantêm o uso das cores consistente entre as páginas. */
+  --ce-color-page: var(--ce-color-cream);
+  --ce-color-surface: var(--ce-color-white);
+  --ce-color-surface-muted: var(--ce-color-blue-soft);
+  --ce-color-text: #001b5c;
+  --ce-color-text-muted: #4c5e7f;
+  --ce-color-text-inverse: var(--ce-color-white);
+  --ce-color-link: var(--ce-color-blue);
+  --ce-color-link-hover: var(--ce-color-vibrant);
+  --ce-color-border: rgba(var(--ce-blue-rgb), 0.14);
+  --ce-color-border-strong: #7185ad;
+  --ce-color-disabled-bg: var(--ce-color-neutral-soft);
+  --ce-color-disabled-text: #626262;
+  --ce-color-success: var(--ce-color-green-ink);
+  --ce-color-success-bg: var(--ce-color-green-soft);
+  --ce-color-attention: var(--ce-color-yellow-ink);
+  --ce-color-attention-bg: var(--ce-color-yellow-soft);
+  --ce-color-focus: var(--ce-color-vibrant);
+
+  /* Tipografia existente: nenhuma nova família ou dependência externa. */
+  --ce-font-body: 'Open Sans', 'Segoe UI', sans-serif;
+  --ce-font-heading: 'Montserrat', 'Segoe UI', sans-serif;
+  --ce-font-size-small: 0.875rem;
+  --ce-font-size-body: 1rem;
+  --ce-font-size-lead: clamp(1rem, 1.5vw, 1.125rem);
+  --ce-font-size-title: clamp(2rem, 4.5vw, 3.5rem);
+  --ce-font-size-section: clamp(1.5rem, 2.8vw, 2.25rem);
+  --ce-font-size-card: clamp(1.125rem, 1.8vw, 1.375rem);
+  --ce-font-weight-regular: 400;
+  --ce-font-weight-semibold: 600;
+  --ce-font-weight-bold: 700;
+  --ce-font-weight-heavy: 800;
+  --ce-line-height-body: 1.6;
+  --ce-line-height-heading: 1.15;
+
+  /* Escala de espaçamento baseada em 4 px com fonte raiz padrão. */
+  --ce-space-1: 0.25rem;
+  --ce-space-2: 0.5rem;
+  --ce-space-3: 0.75rem;
+  --ce-space-4: 1rem;
+  --ce-space-5: 1.25rem;
+  --ce-space-6: 1.5rem;
+  --ce-space-8: 2rem;
+  --ce-space-10: 2.5rem;
+  --ce-space-12: 3rem;
+  --ce-space-16: 4rem;
+  --ce-space-20: 5rem;
+  --ce-page-gutter: clamp(1rem, 3vw, 2rem);
+  --ce-section-space: clamp(2rem, 5vw, 4rem);
+  --ce-grid-gap: clamp(1rem, 2vw, 1.5rem);
+  --ce-layout-wide: 80rem;
+  --ce-layout-form: 56.25rem;
+  --ce-layout-reading: 68ch;
+  --ce-header-height: 5rem;
+  --ce-layer-header: 10;
+  --ce-layer-skip-link: 100;
+
+  /* Formas, profundidade e interação. */
+  --ce-radius-small: 0.5rem;
+  --ce-radius-medium: 0.75rem;
+  --ce-radius-large: 1rem;
+  --ce-radius-card: 1.25rem;
+  --ce-radius-hero: 1.5rem;
+  --ce-radius-pill: 999px;
+  --ce-shadow-small: 0 2px 8px rgba(var(--ce-blue-rgb), 0.04);
+  --ce-shadow-card: 0 8px 24px rgba(var(--ce-blue-rgb), 0.06);
+  --ce-shadow-raised: 0 14px 32px rgba(var(--ce-blue-rgb), 0.1);
+  --ce-control-height: 2.75rem;
+  --ce-focus-width: 3px;
+  --ce-focus-offset: 3px;
+  --ce-duration-fast: 150ms;
+  --ce-duration-normal: 220ms;
+  --ce-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Compatibilidade: páginas atuais continuam funcionando durante a migração gradual. */
+  --bg-page: var(--ce-color-page);
+  --panel-bg: var(--ce-color-surface);
+  --deep-blue: var(--ce-color-blue);
+  --blue-strong: var(--ce-color-vibrant);
+  --green-strong: var(--ce-color-green);
+  --gold: var(--ce-color-yellow);
+  --soft-gray: var(--ce-color-neutral);
+  --dark-text: var(--ce-color-text);
+  --muted-text: var(--ce-color-text-muted);
+  --white: var(--ce-color-white);
+}

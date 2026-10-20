@@ -1,0 +1,78 @@
+fieldset {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  min-width: 0;
+}
+legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  color: var(--ce-color-blue);
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+  font-weight: 800;
+  line-height: 1.4;
+}
+label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--ce-color-border-strong);
+  border-radius: 16px;
+  padding: 1rem;
+  color: var(--ce-color-text);
+  background: var(--ce-color-surface);
+  cursor: pointer;
+}
+label:hover {
+  border-color: var(--ce-color-vibrant);
+  background: var(--ce-color-blue-soft);
+}
+label.selected {
+  border-color: var(--ce-color-vibrant);
+  background: var(--ce-color-blue-soft);
+}
+label.correct {
+  border-color: var(--ce-color-green-ink);
+  background: var(--ce-color-green-soft);
+}
+label.incorrect {
+  border-color: var(--ce-color-attention);
+  background: var(--ce-color-attention-bg);
+}
+input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--ce-color-blue);
+  flex-shrink: 0;
+}
+.letter {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--ce-color-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+label:focus-within {
+  outline: 3px solid var(--ce-color-vibrant);
+  outline-offset: 3px;
+}
+fieldset:disabled label {
+  cursor: default;
+}
+@media (max-width: 480px) {
+  label {
+    padding: 0.8rem;
+    gap: 0.65rem;
+  }
+  .letter {
+    display: none;
+  }
+}

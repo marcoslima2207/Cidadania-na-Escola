@@ -1,0 +1,98 @@
+/* Base global deliberadamente pequena: os layouts de cada página são migrados separadamente. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--ce-font-body);
+  background: var(--ce-color-page);
+  color: var(--ce-color-text);
+}
+
+body {
+  display: block;
+  font-size: var(--ce-font-size-body);
+  line-height: var(--ce-line-height-body);
+}
+
+app-root {
+  display: block;
+  min-height: 100vh;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+.brand__text {
+  font-family: var(--ce-font-heading);
+}
+
+::selection {
+  background: var(--ce-color-yellow);
+  color: var(--ce-color-blue);
+}
+
+/* O anel branco interno acompanha o azul para manter o foco visível em fundos escuros. */
+:focus-visible {
+  outline: var(--ce-focus-width) solid var(--ce-color-focus);
+  outline-offset: var(--ce-focus-offset);
+  box-shadow: 0 0 0 var(--ce-focus-offset) var(--ce-color-white);
+}
+
+/* Esconde texto apenas visualmente: rótulos e instruções continuam acessíveis. */
+.ce-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* As preferências de movimento continuam valendo inclusive nos componentes ainda não migrados. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .ce-spinner,
+  .ce-skeleton {
+    animation: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+}

@@ -21,11 +21,12 @@ import { AuthService } from '../../services/auth.service';
 import { QuizService } from '../../services/quiz.service';
 import { Answer, AnswerFeedback, DailyQuiz, Level, QuizAttempt, QuizProgress } from './quiz.models';
 import { QuizQuestionComponent } from './quiz-question.component';
+import { IconComponent } from '../../components/icon/icon.component';
 
 @Component({
   selector: 'app-quiz',
   standalone: true,
-  imports: [CommonModule, RouterLink, QuizQuestionComponent],
+  imports: [CommonModule, RouterLink, QuizQuestionComponent, IconComponent],
   templateUrl: './quiz.component.html',
   styleUrl: './quiz.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,6 +56,10 @@ export class QuizComponent implements OnInit {
   readonly selected = signal<Answer | null>(null);
   readonly feedback = signal<AnswerFeedback | null>(null);
   readonly lessonTitle = signal('');
+  readonly dailyCompletedDate = signal<string | null>(null);
+  readonly overallPercent = computed(() =>
+    this.levels().length ? Math.round((this.completed().size / this.levels().length) * 100) : 0,
+  );
   readonly question = computed(() => this.attempt()?.perguntas[this.currentIndex()] ?? null);
   readonly percent = computed(() => {
     const attempt = this.attempt();
@@ -79,6 +84,21 @@ export class QuizComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  topicIcon(slug: string): string {
+    return (
+      (
+        {
+          cidadania: 'people',
+          democracia: 'bank',
+          desinformacao: 'document',
+          checagem: 'search',
+          trabalhista: 'briefcase',
+          educacao: 'book',
+        } as Record<string, string>
+      )[slug] || 'book'
+    );
   }
 
   load(): void {
@@ -204,6 +224,8 @@ export class QuizComponent implements OnInit {
           this.attempt.set(data.tentativa);
           this.progress.set(data.progresso);
           this.feedback.set(data);
+          if (data.tentativa.diario !== null && data.tentativa.concluida && data.tentativa.aprovado)
+            this.dailyCompletedDate.set(this.daily()?.data ?? null);
           this.busy.set(false);
         },
         error: (error) => {

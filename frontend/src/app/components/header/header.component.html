@@ -1,0 +1,107 @@
+<header class="site-header" (keydown.escape)="closeMenu(true)">
+  <div class="header-inner ce-container">
+    <a
+      class="brand-link"
+      routerLink="/"
+      (click)="closeMenu()"
+      aria-label="Cidadania na Escola — página inicial"
+    >
+      <app-brand />
+    </a>
+
+    <button
+      #menuToggle
+      class="menu-toggle ce-button ce-button--secondary"
+      type="button"
+      (click)="menuOpen = !menuOpen"
+      [attr.aria-expanded]="menuOpen"
+      [attr.aria-label]="menuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'"
+      aria-controls="header-navigation"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        aria-hidden="true"
+        focusable="false"
+      >
+        @if (menuOpen) {
+          <path d="m6 6 12 12M6 18 18 6" />
+        } @else {
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        }
+      </svg>
+      <span>{{ menuOpen ? 'Fechar' : 'Menu' }}</span>
+    </button>
+
+    <div id="header-navigation" class="header-navigation" [class.is-open]="menuOpen">
+      <nav class="main-navigation" aria-label="Menu principal">
+        @for (item of navigation; track item.path) {
+          <a
+            class="nav-link"
+            [routerLink]="item.path"
+            (click)="closeMenu()"
+            routerLinkActive="is-active"
+            [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+            ariaCurrentWhenActive="page"
+            >{{ item.label }}</a
+          >
+        }
+      </nav>
+
+      <div class="header-actions">
+        <a
+          routerLink="/buscar"
+          (click)="closeMenu()"
+          class="search-link"
+          aria-label="Pesquisar assuntos e publicações"
+          title="Pesquisar assuntos e publicações"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 4.5 4.5" />
+          </svg>
+          <span class="search-label">Pesquisar assuntos</span>
+        </a>
+
+        <div class="account-actions">
+          @if (isLoggedIn) {
+            <a
+              routerLink="/perfil"
+              (click)="closeMenu()"
+              routerLinkActive="is-active"
+              ariaCurrentWhenActive="page"
+              class="account-link ce-button"
+              >Meu perfil</a
+            >
+            <button
+              type="button"
+              class="logout-button ce-button ce-button--secondary"
+              (click)="logout()"
+              [disabled]="loggingOut"
+            >
+              {{ loggingOut ? 'Saindo…' : 'Sair' }}
+            </button>
+          } @else {
+            <a
+              routerLink="/acesso"
+              (click)="closeMenu()"
+              routerLinkActive="is-active"
+              ariaCurrentWhenActive="page"
+              class="account-link ce-button"
+              >Entrar<span class="register-label"> / Criar conta</span></a
+            >
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
