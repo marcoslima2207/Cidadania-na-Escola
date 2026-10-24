@@ -15,6 +15,7 @@ import { PostsService } from '../../services/posts.service';
 interface Post {
   id: number;
   author: string;
+  author_display_name?: string;
   title: string;
   category: string;
   content: string;
@@ -31,6 +32,7 @@ interface Post {
 interface Comment {
   id: number;
   author: string;
+  author_display_name?: string;
   content: string;
   created_at?: string;
 }

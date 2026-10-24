@@ -11,6 +11,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 // O upload é recebido pelo campo avatar_file; a consulta retorna seu endereço neste contrato.
 interface Profile {
   username: string;
+  display_name?: string;
   email: string;
   bio: string;
   avatar_url: string;

@@ -6,6 +6,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
+from .user_display import user_display_name
 
 User = get_user_model()
 
@@ -78,6 +79,7 @@ class RegisterSerializer(serializers.Serializer):
 class PostSerializer(serializers.ModelSerializer):
     # Campos calculados complementam os campos do modelo sem aceitar valores do cliente.
     author = serializers.SerializerMethodField()
+    author_display_name = serializers.SerializerMethodField()
     author_profile = serializers.SerializerMethodField()
     is_mine = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
@@ -98,6 +100,7 @@ class PostSerializer(serializers.ModelSerializer):
             "media_file",
             "created_at",
             "author",
+            "author_display_name",
             "author_profile",
             "is_mine",
             "likes_count",
@@ -122,6 +125,9 @@ class PostSerializer(serializers.ModelSerializer):
     # Retorna o username do autor da publicação.
     def get_author(self, obj):
         return obj.user.username
+
+    def get_author_display_name(self, obj):
+        return user_display_name(obj.user)
 
     # Prioriza o arquivo enviado e mantém a URL externa para publicações antigas.
     def get_media_url(self, obj):
@@ -216,6 +222,7 @@ class PostSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     # Identificação da conta é somente leitura; este endpoint edita apenas o perfil.
     username = serializers.CharField(source="user.username", read_only=True)
+    display_name = serializers.SerializerMethodField()
     email = serializers.EmailField(source="user.email", read_only=True)
     avatar_file = serializers.FileField(write_only=True, required=False, allow_null=True)
     avatar_file_url = serializers.SerializerMethodField()
@@ -224,6 +231,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         model = Profile
         fields = [
             "username",
+            "display_name",
             "email",
             "bio",
             "avatar_url",
@@ -231,6 +239,9 @@ class ProfileSerializer(serializers.ModelSerializer):
             "avatar_file",
             "avatar_file_url",
         ]
+
+    def get_display_name(self, obj):
+        return user_display_name(obj.user)
 
     # Devolve o endereço completo do upload para o frontend hospedado em outro domínio.
     def get_avatar_file_url(self, obj):
@@ -292,11 +303,15 @@ class ProfileSerializer(serializers.ModelSerializer):
 class PostCommentSerializer(serializers.ModelSerializer):
     # A view define o autor a partir da sessão e o post a partir da URL.
     author = serializers.CharField(source="user.username", read_only=True)
+    author_display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = PostComment
-        fields = ["id", "post", "content", "author", "created_at"]
+        fields = ["id", "post", "content", "author", "author_display_name", "created_at"]
         read_only_fields = ["post"]
+
+    def get_author_display_name(self, obj):
+        return user_display_name(obj.user)
 
 
 # CONTEÚDO EDUCATIVO.

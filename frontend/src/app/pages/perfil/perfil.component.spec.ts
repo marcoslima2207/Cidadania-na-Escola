@@ -28,6 +28,30 @@ describe('Perfil com foto e ilustrações', () => {
     localStorage.clear();
   });
 
+  it('exibe o nome salvo da conta Google em vez do identificador interno', async () => {
+    const fixture = TestBed.createComponent(PerfilComponent);
+    fixture.detectChanges();
+    http.expectOne(`${apiConfig.baseUrl}/auth/profile/`).flush({
+      ...profile,
+      username: 'google_3c0d6272c6a9a5eaca143583',
+      display_name: 'Marcos Eduardo',
+    });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('#profile-username').value).toBe('Marcos Eduardo');
+    expect(fixture.nativeElement.querySelector('.avatar-column strong').textContent).toBe(
+      'Marcos Eduardo',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('google_3c0d6272c6a9a5eaca143583');
+  });
+
+  it('mantém o nome de usuário ao receber uma API sem display_name', async () => {
+    const fixture = TestBed.createComponent(PerfilComponent);
+    fixture.detectChanges();
+    http.expectOne(`${apiConfig.baseUrl}/auth/profile/`).flush({ ...profile });
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('#profile-username').value).toBe('aluno');
+  });
+
   it('mostra oito ilustrações e substitui a foto pela escolha salva', async () => {
     const fixture = TestBed.createComponent(PerfilComponent);
     const component = fixture.componentInstance;

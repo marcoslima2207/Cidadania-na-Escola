@@ -14,6 +14,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .google_auth import GoogleCredentialSerializer, google_config
+from .user_display import user_display_name
 from .models import (
     Conteudo,
     Pergunta,
@@ -41,7 +42,12 @@ def auth_response(user):
     Profile.objects.get_or_create(user=user)
     return {
         "token": token.key,
-        "user": {"id": user.id, "username": user.username, "email": user.email},
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "display_name": user_display_name(user),
+            "email": user.email,
+        },
     }
 
 

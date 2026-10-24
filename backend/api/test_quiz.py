@@ -314,6 +314,7 @@ class GoogleLoginTests(APITestCase):
         response = self.login()
         self.assertEqual(response.status_code, 200)
         self.assertIn("token", response.data)
+        self.assertEqual(response.data["user"]["display_name"], "Pessoa")
         user = User.objects.get(email="pessoa@gmail.com")
         self.assertFalse(user.has_usable_password())
         self.assertTrue(GoogleIdentity.objects.filter(user=user, subject="google-subject").exists())

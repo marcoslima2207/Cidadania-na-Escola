@@ -32,7 +32,7 @@
             height="192"
           />
         </div>
-        <strong>{{ profile.username }}</strong>
+        <strong>{{ profile.display_name || profile.username }}</strong>
         <p>Aparência na comunidade</p>
         <input
           #avatarInput
@@ -54,8 +54,13 @@
       </aside>
       <div class="profile-form ce-card">
         <div class="ce-field">
-          <label class="ce-field__label" for="profile-username">Nome de usuário</label
-          ><input class="ce-input" id="profile-username" [value]="profile.username" disabled />
+          <label class="ce-field__label" for="profile-username">Nome na comunidade</label
+          ><input
+            class="ce-input"
+            id="profile-username"
+            [value]="profile.display_name || profile.username"
+            disabled
+          />
         </div>
         <div class="appearance-label">
           <h2>Aparência na comunidade</h2>
