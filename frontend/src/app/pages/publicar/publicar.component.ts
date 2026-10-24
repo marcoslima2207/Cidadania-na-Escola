@@ -34,6 +34,9 @@ export class PublicarComponent implements OnDestroy {
   // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   form = { category: 'Cidadania', media_type: 'image', title: '', content: '', media_url: '' };
   selectedFile: File | null = null;
+  get hasMedia(): boolean {
+    return !!this.selectedFile || !!this.form.media_url.trim();
+  }
   error = '';
   loading = false;
   private readonly api = apiConfig.baseUrl;
@@ -71,6 +74,8 @@ export class PublicarComponent implements OnDestroy {
       return;
     }
     this.selectedFile = file;
+    delete this.fieldErrors['title'];
+    delete this.fieldErrors['content'];
     // A prévia usa uma URL do navegador; o upload só ocorre ao clicar em publicar.
     this.previewUrl = URL.createObjectURL(file);
   }
@@ -86,7 +91,7 @@ export class PublicarComponent implements OnDestroy {
       this.error = 'Sua sessão terminou. Entre novamente para publicar.';
       return;
     }
-    if (!this.form.title.trim() || !this.form.content.trim()) {
+    if (!this.hasMedia && (!this.form.title.trim() || !this.form.content.trim())) {
       if (!this.form.title.trim()) this.fieldErrors['title'] = 'Informe o título da publicação.';
       if (!this.form.content.trim()) this.fieldErrors['content'] = 'Escreva o texto da publicação.';
       this.error = 'Preencha o título e o texto da publicação.';

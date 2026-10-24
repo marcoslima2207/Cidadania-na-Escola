@@ -20,6 +20,37 @@ describe('Publicação', () => {
     localStorage.clear();
   });
 
+  for (const [type, name, mime] of [
+    ['image', 'foto.png', 'image/png'],
+    ['video', 'video.mp4', 'video/mp4'],
+  ]) {
+    it(`publica ${type} sem título nem texto`, () => {
+      const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+      const component = TestBed.createComponent(PublicarComponent).componentInstance;
+      component.form.media_type = type;
+      component.form.title = '   ';
+      component.selectedFile = new File(['arquivo'], name, { type: mime });
+      component.publish();
+      const request = http.expectOne(`${apiConfig.baseUrl}/posts/`);
+      expect(request.request.body.get('title')).toBe('');
+      expect(request.request.body.get('content')).toBe('');
+      expect(request.request.body.get('media_file').name).toBe(name);
+      request.flush({ id: 43 }, { status: 201, statusText: 'Created' });
+      expect(component.error).toBe('');
+      expect(navigate).toHaveBeenCalledWith(['/postagens']);
+    });
+  }
+
+  it('impede publicação vazia e volta a exigir escrita ao remover o arquivo', () => {
+    const component = TestBed.createComponent(PublicarComponent).componentInstance;
+    component.selectedFile = new File(['foto'], 'foto.png', { type: 'image/png' });
+    component.clearMedia();
+    component.publish();
+    http.expectNone(`${apiConfig.baseUrl}/posts/`);
+    expect(component.fieldErrors['title']).toBeTruthy();
+    expect(component.fieldErrors['content']).toBeTruthy();
+  });
+
   it('exibe o erro da API, libera o botão e permite corrigir e publicar', async () => {
     const fixture = TestBed.createComponent(PublicarComponent);
     const component = fixture.componentInstance;

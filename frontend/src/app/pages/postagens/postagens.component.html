@@ -99,13 +99,22 @@
                   [class.ce-badge--yellow]="post.category === 'Direitos Trabalhistas'"
                   >{{ post.category }}</span
                 >
-                <h2>{{ post.title }}</h2>
-                <p>{{ post.content }}</p>
+                @if (post.title) {
+                  <h2>{{ post.title }}</h2>
+                }
+                @if (post.content) {
+                  <p>{{ post.content }}</p>
+                }
               </div>
               @if (post.media_url) {
                 <div class="post-media">
                   @if (post.media_type === 'image') {
-                    <img class="media" [src]="post.media_url" [alt]="post.title" loading="lazy" />
+                    <img
+                      class="media"
+                      [src]="post.media_url"
+                      [alt]="post.title || 'Foto publicada na comunidade'"
+                      loading="lazy"
+                    />
                   } @else {
                     <video
                       class="media"

@@ -90,6 +90,10 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
+        extra_kwargs = {
+            "title": {"required": False, "allow_blank": True},
+            "content": {"required": False, "allow_blank": True},
+        }
         fields = [
             "id",
             "title",
@@ -120,6 +124,22 @@ class PostSerializer(serializers.ModelSerializer):
         if media:
             attrs["media_type"] = "video" if media.content_type.startswith("video/") else "image"
             attrs["media_url"] = ""
+        instance = self.instance
+        has_media = attrs.get("media_file", getattr(instance, "media_file", None)) or attrs.get(
+            "media_url", getattr(instance, "media_url", "")
+        )
+        errors = {}
+        for field, message in (
+            ("title", "Informe o título quando não houver foto ou vídeo."),
+            ("content", "Escreva o texto quando não houver foto ou vídeo."),
+        ):
+            value = attrs.get(field, getattr(instance, field, "")).strip()
+            if not has_media and not value:
+                errors[field] = message
+            if instance is None or field in attrs:
+                attrs[field] = value
+        if errors:
+            raise serializers.ValidationError(errors)
         return attrs
 
     # Retorna o username do autor da publicação.

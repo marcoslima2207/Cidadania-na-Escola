@@ -45,7 +45,8 @@
       </div>
       <div class="ce-field">
         <div class="label-row">
-          <label class="ce-field__label" for="post-title">Título</label
+          <label class="ce-field__label" for="post-title"
+            >Título <span class="optional">(opcional com foto ou vídeo)</span></label
           ><small>{{ form.title.length }}/200</small>
         </div>
         <input
@@ -55,8 +56,10 @@
           [(ngModel)]="form.title"
           maxlength="200"
           placeholder="Dê um título à sua publicação"
-          aria-required="true"
-          [attr.aria-invalid]="(submitted && !form.title.trim()) || !!fieldErrors['title']"
+          [attr.aria-required]="!hasMedia"
+          [attr.aria-invalid]="
+            (submitted && !hasMedia && !form.title.trim()) || !!fieldErrors['title']
+          "
           [attr.aria-describedby]="fieldErrors['title'] ? 'post-title-error' : null"
           [disabled]="loading"
         />
@@ -65,7 +68,8 @@
         }
       </div>
       <div class="ce-field">
-        <label class="ce-field__label" for="post-content">Texto</label
+        <label class="ce-field__label" for="post-content"
+          >Texto <span class="optional">(opcional com foto ou vídeo)</span></label
         ><textarea
           class="ce-input"
           id="post-content"
@@ -73,8 +77,10 @@
           [(ngModel)]="form.content"
           rows="7"
           placeholder="O que você gostaria de compartilhar?"
-          aria-required="true"
-          [attr.aria-invalid]="(submitted && !form.content.trim()) || !!fieldErrors['content']"
+          [attr.aria-required]="!hasMedia"
+          [attr.aria-invalid]="
+            (submitted && !hasMedia && !form.content.trim()) || !!fieldErrors['content']
+          "
           [attr.aria-describedby]="fieldErrors['content'] ? 'post-content-error' : null"
           [disabled]="loading"
         ></textarea>
@@ -107,7 +113,10 @@
             >JPG, JPEG, JFIF, PNG ou WEBP · MP4, WEBM ou MOV · Até 20 MB.</small
           >
         </div>
-        <p class="ce-field__hint">Sem anexo, sua publicação será composta apenas por texto.</p>
+        <p class="ce-field__hint">
+          Você pode publicar só a foto ou o vídeo, sem escrever. Sem anexo, preencha o título e o
+          texto.
+        </p>
       </div>
       @if (selectedFile) {
         <p class="selected-file"><app-icon name="check" /> {{ selectedFile.name }}</p>

@@ -40,8 +40,12 @@ import { IconComponent } from '../icon/icon.component';
           }}</time>
         }
       </div>
-      <h3>{{ post().title }}</h3>
-      <p>{{ post().content }}</p>
+      @if (post().title) {
+        <h3>{{ post().title }}</h3>
+      }
+      @if (post().content) {
+        <p>{{ post().content }}</p>
+      }
       <span class="content-link">Acessar conteúdo <app-icon name="arrow" /></span>
     </div>
   </a>`,

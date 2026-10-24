@@ -45,6 +45,35 @@ class ApiEndpointsTests(APITestCase):
             password='12345678'
         )
 
+    def test_media_only_posts_accept_photo_and_video_without_written_fields(self):
+        self.client.force_authenticate(self.user)
+        for name, data, mime in [
+            ('foto.png', b'\x89PNG\r\n\x1a\n' + b'0' * 32, 'image/png'),
+            ('video.mp4', b'\x00\x00\x00\x18ftypmp42' + b'0' * 32, 'video/mp4'),
+        ]:
+            with self.subTest(name=name):
+                response = self.client.post(
+                    reverse('post-list'),
+                    {'category': 'Cidadania', 'media_file': SimpleUploadedFile(name, data, content_type=mime)},
+                    format='multipart',
+                )
+                self.assertEqual(response.status_code, 201, response.data)
+                self.assertEqual(response.data['title'], '')
+                self.assertEqual(response.data['content'], '')
+                self.assertTrue(response.data['media_url'])
+
+    def test_no_media_still_requires_title_and_text(self):
+        self.client.force_authenticate(self.user)
+        for payload in [
+            {'category': 'Cidadania'},
+            {'category': 'Cidadania', 'title': '  ', 'content': '  '},
+        ]:
+            response = self.client.post(reverse('post-list'), payload, format='json')
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('title', response.data)
+            self.assertIn('content', response.data)
+        self.assertEqual(Post.objects.count(), 0)
+
     # Confere se os materiais educativos podem ser consultados.
     def test_list_conteudos(self):
         response = self.client.get(reverse('conteudo-list'))
