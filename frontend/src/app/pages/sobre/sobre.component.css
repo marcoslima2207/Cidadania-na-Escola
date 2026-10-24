@@ -29,12 +29,6 @@
   position: relative;
   align-self: end;
 }
-.about-art > span {
-  position: absolute;
-  inset: 10% 0 0 8%;
-  border-radius: 50% 50% 0 0;
-  background: linear-gradient(135deg, var(--ce-color-green), var(--ce-color-yellow));
-}
 .about-art img {
   position: relative;
   width: 100%;
