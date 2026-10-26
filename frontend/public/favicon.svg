@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -8 56 56">
+  <title>Cidadania na Escola</title>
+  <defs>
+    <linearGradient id="yellow" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#e7b400" />
+      <stop offset="1" stop-color="#d6a700" />
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#0a901c" />
+      <stop offset="1" stop-color="#076514" />
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#0047f1" />
+      <stop offset="1" stop-color="#002d9a" />
+    </linearGradient>
+  </defs>
+  <path d="M2 36V12a8 8 0 0 1 16 0v24Z" fill="url(#yellow)" transform="translate(5.734907715 0) skewX(-16)" />
+  <path d="M16 36V12a8 8 0 0 1 16 0v24Z" fill="url(#green)" />
+  <path d="M30 36V12a8 8 0 0 1 16 0v24Z" fill="url(#blue)" transform="translate(-5.734907715 0) skewX(16)" />
+</svg>
