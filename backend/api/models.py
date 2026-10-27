@@ -4,6 +4,19 @@ from django.db import models
 from django.utils import timezone
 
 
+class ClerkIdentity(models.Model):
+    # Separa as identidades de desenvolvimento e produção e conserva as FKs locais.
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    issuer = models.URLField()
+    subject = models.CharField(max_length=255)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['issuer', 'subject'], name='unique_clerk_subject'),
+            models.UniqueConstraint(fields=['issuer', 'user'], name='unique_clerk_user'),
+        ]
+
+
 # POSTAGENS: conteúdo publicado pelos usuários.
 class Post(models.Model):
     # Opções aceitas para classificar uma publicação; cada par guarda valor e rótulo.

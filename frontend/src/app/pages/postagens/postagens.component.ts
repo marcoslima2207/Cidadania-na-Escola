@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 // Carrega o feed público, filtra assuntos e permite curtir, comentar e excluir posts próprios.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -49,6 +50,7 @@ interface Comment {
   styleUrl: './postagens.component.css',
 })
 export class PostagensComponent implements OnInit, OnDestroy {
+  private readonly auth = inject(AuthService);
   readonly publicationCreated = inject(PostsService).publicationCreated;
   ngOnDestroy(): void {
     this.publicationCreated.set(false);
@@ -69,7 +71,7 @@ export class PostagensComponent implements OnInit, OnDestroy {
   private loadId = 0;
   // Indica se existe um token no navegador; a API confirma sua validade em cada requisição.
   get loggedIn(): boolean {
-    return !!localStorage.getItem('cidadania_token');
+    return this.auth.loggedIn;
   }
   // Recebe os serviços do Angular utilizados por esta classe por injeção de dependências.
   constructor(
@@ -227,7 +229,6 @@ export class PostagensComponent implements OnInit, OnDestroy {
   }
   // Monta o cabeçalho de autenticação com o token salvo no navegador.
   private headers(): HttpHeaders {
-    const token = localStorage.getItem('cidadania_token');
-    return new HttpHeaders(token ? { Authorization: 'Token ' + token } : {});
+    return this.auth.headers;
   }
 }

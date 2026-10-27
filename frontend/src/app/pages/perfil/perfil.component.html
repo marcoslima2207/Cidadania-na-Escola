@@ -3,6 +3,11 @@
     <p class="ce-eyebrow">Meu espaço na comunidade</p>
     <h1 id="profile-title" class="ce-title">Seu perfil</h1>
     <p class="ce-lead">Personalize como você aparece na comunidade.</p>
+    @if (clerk.enabled && clerk.signedIn()) {
+      <button type="button" class="ce-button ce-button--secondary" (click)="accountSettings()">
+        E-mail e segurança da conta
+      </button>
+    }
   </header>
   @if (loading) {
     <div class="profile-state ce-notice" role="status">
@@ -12,8 +17,9 @@
   @if (error) {
     <div class="profile-state ce-notice ce-notice--error" role="alert">
       <strong>{{ error }}</strong
-      ><button type="button" class="ce-button ce-button--secondary" (click)="goToLogin()">
-        Entrar novamente
+      ><button type="button" class="ce-button ce-button--secondary"
+        (click)="sessionExpired ? goToLogin() : loadProfile()">
+        {{ sessionExpired ? 'Entrar novamente' : 'Tentar novamente' }}
       </button>
     </div>
   }

@@ -52,6 +52,25 @@ describe('Perfil com foto e ilustrações', () => {
     expect(fixture.nativeElement.querySelector('#profile-username').value).toBe('aluno');
   });
 
+  it('permite tentar novamente após falha do serviço sem exigir novo login', async () => {
+    const fixture = TestBed.createComponent(PerfilComponent);
+    fixture.detectChanges();
+    http.expectOne(`${apiConfig.baseUrl}/auth/profile/`).flush(
+      { detail: 'O serviço de autenticação está indisponível. Tente novamente.' },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    await fixture.whenStable();
+    const retry = fixture.nativeElement.querySelector('.profile-state button') as HTMLButtonElement;
+    expect(retry.textContent?.trim()).toBe('Tentar novamente');
+    expect(fixture.componentInstance.error).toContain('indisponível');
+    expect(localStorage.getItem('cidadania_token')).toBe('teste');
+    retry.click();
+    http.expectOne(`${apiConfig.baseUrl}/auth/profile/`).flush({ ...profile });
+    await fixture.whenStable();
+    expect(fixture.componentInstance.profile?.username).toBe('aluno');
+    expect(fixture.componentInstance.error).toBe('');
+  });
+
   it('mostra oito ilustrações e substitui a foto pela escolha salva', async () => {
     const fixture = TestBed.createComponent(PerfilComponent);
     const component = fixture.componentInstance;

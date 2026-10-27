@@ -137,7 +137,8 @@ MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 REST_FRAMEWORK = {
     # Primeiro aceita Authorization: Token; também permite sessões Django autenticadas.
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'api.clerk_auth.ClerkAuthentication',
+        'api.clerk_auth.LegacyTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -161,5 +162,14 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+CLERK_ENABLED = os.getenv('CLERK_ENABLED', 'false').lower() == 'true'
+LEGACY_AUTH_ENABLED = os.getenv('LEGACY_AUTH_ENABLED', 'true').lower() == 'true'
+CLERK_SECRET_KEY = os.getenv('CLERK_SECRET_KEY', '')
+CLERK_ISSUER = os.getenv('CLERK_ISSUER', '').rstrip('/')
+CLERK_AUTHORIZED_PARTIES = [
+    value.strip() for value in os.getenv(
+        'CLERK_AUTHORIZED_PARTIES', 'http://localhost:4200'
+    ).split(',') if value.strip()
+]
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-3.8-flash')

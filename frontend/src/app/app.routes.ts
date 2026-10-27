@@ -38,6 +38,11 @@ export const routes: Routes = [
   },
   // COMUNIDADE: acesso, perfil, publicações e criação de posts.
   {
+    path: 'acesso/cadastro',
+    data: { clerkMode: 'sign-up' },
+    loadComponent: () => import('./pages/acesso/acesso.component').then((m) => m.AcessoComponent),
+  },
+  {
     path: 'acesso',
     loadComponent: () => import('./pages/acesso/acesso.component').then((m) => m.AcessoComponent),
   },

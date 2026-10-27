@@ -1,12 +1,15 @@
+import { AuthService } from '../../services/auth.service';
+import { ClerkService } from '../../services/clerk.service';
 // Perfil autenticado: permite enviar uma foto, manter um link ou escolher uma ilustração.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { apiConfig } from '../../api-config';
 import { avatarImage, avatarOptions } from '../../avatar-options';
 import { IconComponent } from '../../components/icon/icon.component';
+import { apiErrorMessage } from '../../services/api-error';
 
 // O upload é recebido pelo campo avatar_file; a consulta retorna seu endereço neste contrato.
 interface Profile {
@@ -29,11 +32,21 @@ interface Profile {
   styleUrl: './perfil.component.css',
 })
 export class PerfilComponent implements OnInit, OnDestroy {
+  readonly clerk = inject(ClerkService);
+  private readonly auth = inject(AuthService);
+  async accountSettings(): Promise<void> {
+    try { await this.clerk.openUserProfile(); }
+    catch {
+      this.saveError = 'Não foi possível abrir as configurações da conta. Tente novamente.';
+      this.changeDetector.markForCheck();
+    }
+  }
   profile: Profile | null = null;
   illustrations = avatarOptions;
   mode: 'upload' | 'url' | 'illustration' = 'illustration';
   message = '';
   error = '';
+  sessionExpired = false;
   saveError = '';
   loading = true;
   saving = false;
@@ -60,10 +73,17 @@ export class PerfilComponent implements OnInit, OnDestroy {
 
   // Consulta apenas o perfil da sessão autenticada.
   ngOnInit(): void {
-    if (!localStorage.getItem('cidadania_token')) {
+    this.loadProfile();
+  }
+
+  loadProfile(): void {
+    if (!this.auth.loggedIn) {
       this.goToLogin();
       return;
     }
+    this.loading = true;
+    this.error = '';
+    this.sessionExpired = false;
     this.http.get<Profile>(`${this.api}/auth/profile/`, { headers: this.headers() }).subscribe({
       next: (profile) => {
         this.profile = profile;
@@ -78,11 +98,15 @@ export class PerfilComponent implements OnInit, OnDestroy {
       },
       error: (response) => {
         this.loading = false;
+        this.sessionExpired = response.status === 401 || response.status === 403;
         if (response.status === 401) localStorage.removeItem('cidadania_token');
-        this.error =
+        this.error = apiErrorMessage(response,
           response.status === 0
-            ? 'Não foi possível conectar ao servidor.'
-            : 'Não foi possível carregar o perfil. Entre novamente.';
+            ? 'Não foi possível conectar ao servidor. Tente novamente.'
+            : this.sessionExpired
+              ? 'Sua sessão expirou. Entre novamente.'
+              : 'Não foi possível carregar o perfil agora. Tente novamente.',
+        );
         this.changeDetector.markForCheck();
       },
     });
@@ -187,8 +211,6 @@ export class PerfilComponent implements OnInit, OnDestroy {
     this.router.navigate(['/acesso']);
   }
   private headers(): HttpHeaders {
-    return new HttpHeaders({
-      Authorization: `Token ${localStorage.getItem('cidadania_token') || ''}`,
-    });
+    return this.auth.headers;
   }
 }

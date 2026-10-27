@@ -6,7 +6,9 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "clerk:configure": "node --env-file=../backend/.env.clerk.local scripts/configure-clerk.mjs",
+    "clerk:backend": "node --env-file=../backend/.env.clerk.local scripts/clerk-backend.mjs"
   },
   "private": true,
   "packageManager": "npm@11.9.0",
@@ -17,6 +19,8 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@clerk/clerk-js": "^6.41.0",
+    "@clerk/localizations": "^4.24.2",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

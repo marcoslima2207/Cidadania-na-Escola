@@ -6,6 +6,9 @@
       <p>Participe das conversas, compartilhe informação e acompanhe ideias que transformam.</p>
       <img src="illustrations/learning-together.webp" alt="" width="900" height="600" />
     </div>
+    @if (clerk.enabled) {
+      <app-clerk-access />
+    } @else {
     <form class="access-form" (ngSubmit)="submit()" novalidate [attr.aria-busy]="loading()">
       <div class="mode-switch" role="group" aria-label="Tipo de acesso">
         <button
@@ -87,5 +90,6 @@
         >Voltar para o início</a
       >
     </form>
+    }
   </div>
 </section>

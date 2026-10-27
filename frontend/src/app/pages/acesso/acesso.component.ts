@@ -3,26 +3,30 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../services/auth.service';
 import { apiErrorMessage } from '../../services/api-error';
 import { GoogleLoginComponent } from '../../components/google-login/google-login.component';
+import { ClerkAccessComponent } from '../../components/clerk-access/clerk-access.component';
+import { ClerkService } from '../../services/clerk.service';
 
 // AUTENTICACAO: formulario de login e criacao de conta.
 @Component({
   selector: 'app-acesso',
   standalone: true,
   // Disponibiliza as diretivas, os formulários e os componentes usados por este template.
-  imports: [CommonModule, FormsModule, RouterLink, GoogleLoginComponent],
+  imports: [CommonModule, FormsModule, RouterLink, GoogleLoginComponent, ClerkAccessComponent],
   // HTML da página: liga campos, eventos e condições ao estado do componente.
   templateUrl: './acesso.component.html',
   // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.
   styleUrl: './acesso.component.css',
 })
 export class AcessoComponent {
+  readonly clerk = inject(ClerkService);
   // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
-  mode: 'login' | 'register' = 'login';
+  mode: 'login' | 'register' = inject(ActivatedRoute).snapshot.data['clerkMode'] === 'sign-up'
+    ? 'register' : 'login';
   email = '';
   password = '';
   readonly error = signal('');

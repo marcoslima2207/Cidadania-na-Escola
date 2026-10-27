@@ -9,3 +9,4 @@ gunicorn>=23,<24
 # Driver de conexão ao PostgreSQL, com distribuição binária das dependências.
 psycopg[binary]>=3.2,<4
 google-auth[requests]>=2.40,<3
+PyJWT[crypto]>=2.10,<3

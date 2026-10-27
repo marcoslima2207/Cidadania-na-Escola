@@ -1,3 +1,4 @@
+import { AuthService } from '../../services/auth.service';
 // Monta a publicação, apresenta a prévia do arquivo e envia texto e mídia para a API.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -23,13 +24,14 @@ import { PostsService } from '../../services/posts.service';
   styleUrl: './publicar.component.css',
 })
 export class PublicarComponent implements OnDestroy {
+  private readonly auth = inject(AuthService);
   readonly categories = postCategories;
   private readonly posts = inject(PostsService);
   submitted = false;
   fieldErrors: Record<string, string> = {};
   // Indica se existe um token no navegador; a API confirma sua validade em cada requisição.
   get loggedIn(): boolean {
-    return !!localStorage.getItem('cidadania_token');
+    return this.auth.loggedIn;
   }
   // Estado da classe: guarda os dados e as opções utilizados pelos métodos e pelo template.
   form = { category: 'Cidadania', media_type: 'image', title: '', content: '', media_url: '' };
@@ -86,8 +88,7 @@ export class PublicarComponent implements OnDestroy {
     this.submitted = true;
     this.fieldErrors = {};
     this.error = '';
-    const token = localStorage.getItem('cidadania_token');
-    if (!token) {
+    if (!this.auth.loggedIn) {
       this.error = 'Sua sessão terminou. Entre novamente para publicar.';
       return;
     }
@@ -109,7 +110,7 @@ export class PublicarComponent implements OnDestroy {
     if (this.selectedFile) payload.append('media_file', this.selectedFile, this.selectedFile.name);
     this.http
       .post(`${this.api}/posts/`, payload, {
-        headers: new HttpHeaders({ Authorization: `Token ${token}` }),
+        headers: this.auth.headers,
       })
       .pipe(
         // Libera a tela se o servidor não responder, sem reenviar automaticamente o post.

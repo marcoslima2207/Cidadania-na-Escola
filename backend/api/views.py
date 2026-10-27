@@ -101,6 +101,11 @@ def serve_uploaded_media(request, path):
 
 # AUTENTICAÇÃO: login, logout e perfil do usuário atual.
 class AuthViewSet(viewsets.ViewSet):
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not settings.LEGACY_AUTH_ENABLED and self.action in ['login', 'register', 'google']:
+            raise PermissionDenied('Use a nova tela de acesso para entrar na sua conta.')
+
     @action(detail=False, methods=["get"], url_path="google-config")
     def google_config(self, request):
         return Response(google_config())
