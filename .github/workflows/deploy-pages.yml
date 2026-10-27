@@ -36,6 +36,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
 
       # npm ci usa as versões exatas registradas no package-lock.json.
@@ -43,10 +44,20 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      # O endereço base inclui o nome do repositório, usado no GitHub Pages.
+      # Somente a chave pública de produção entra no frontend compilado.
+      - name: Configure Clerk production
+        if: ${{ vars.CLERK_PUBLISHABLE_KEY != '' }}
+        working-directory: frontend
+        env:
+          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
+        run: node scripts/configure-clerk.mjs --production
+
+      # O Pages informa /repositorio no github.io e a raiz no domínio próprio.
       - name: Build Angular app
         working-directory: frontend
-        run: npm run build -- --base-href /Cidadania-na-Escola/
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: npm run build -- --base-href "${PAGES_BASE_PATH%/}/"
 
       # Permite carregar diretamente uma rota Angular quando o Pages procura uma página 404.
       - name: Add SPA fallback

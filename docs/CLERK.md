@@ -102,6 +102,10 @@ e sessões simuladas. Eles não criam usuários no Clerk nem enviam e-mails reai
 
 ## Produção — etapa posterior à validação
 
+O [guia de produção](CLERK_PRODUCAO.md) detalha domínio, DNS, Render e a variável
+pública `CLERK_PUBLISHABLE_KEY` do GitHub Actions. O workflow ajusta o endereço
+base ao domínio configurado no Pages e injeta somente chaves públicas `pk_live_`.
+
 Crie a instância Production no painel Clerk e configure um domínio próprio, os
 registros DNS, os e-mails e suas próprias credenciais OAuth Google. Não é possível
 copiar usuários de Development para Production: importe diretamente do Django
