@@ -88,6 +88,19 @@ import { Component, input } from '@angular/core';
       @case ('back') {
         <path d="M20 12H4m6-6-6 6 6 6" />
       }
+      @case ('calendar') {
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M7 3v4m10-4v4M3 10h18" />
+      }
+      @case ('chart') {
+        <path d="M3 21h18M5 17v-4h3v4m3 0V9h3v8m3 0V4h3v13" />
+      }
+      @case ('star') {
+        <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.6l6.2-.9L12 3Z" />
+      }
+      @case ('crown') {
+        <path d="m3 6 5 4 4-6 4 6 5-4-2 13H5L3 6Z" />
+      }
       @default {
         <path d="M4 12h16m-6-6 6 6-6 6" />
       }

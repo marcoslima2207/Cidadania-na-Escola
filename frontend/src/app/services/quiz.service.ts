@@ -8,7 +8,10 @@ import {
   AttemptResponse,
   DailyQuiz,
   Level,
+  QuizDashboard,
   QuizProgress,
+  QuizRanking,
+  QuizReview,
 } from '../pages/quiz/quiz.models';
 import { AuthService } from './auth.service';
 
@@ -49,5 +52,34 @@ export class QuizService {
         { headers: this.auth.headers },
       )
       .pipe(timeout(QUIZ_REQUEST_TIMEOUT_MS));
+  }
+
+  practice(topic: string | null, question?: string): Observable<AttemptResponse> {
+    const body = question ? { tema: topic, questao: question } : { tema: topic };
+    return this.http
+      .post<AttemptResponse>(`${this.api}/treino/`, body, { headers: this.auth.headers })
+      .pipe(timeout(QUIZ_REQUEST_TIMEOUT_MS));
+  }
+
+  reviews(): Observable<QuizReview[]> {
+    return this.http
+      .get<QuizReview[]>(`${this.api}/revisao/`, { headers: this.auth.headers })
+      .pipe(timeout(QUIZ_REQUEST_TIMEOUT_MS));
+  }
+
+  dashboard(): Observable<QuizDashboard> {
+    return this.http
+      .get<QuizDashboard>(`${this.api}/evolucao/`, { headers: this.auth.headers })
+      .pipe(timeout(QUIZ_REQUEST_TIMEOUT_MS));
+  }
+
+  ranking(participate?: boolean): Observable<QuizRanking> {
+    const url = `${this.api}/ranking/`;
+    const options = { headers: this.auth.headers };
+    return (
+      participate === undefined
+        ? this.http.get<QuizRanking>(url, options)
+        : this.http.post<QuizRanking>(url, { participar: participate }, options)
+    ).pipe(timeout(QUIZ_REQUEST_TIMEOUT_MS));
   }
 }

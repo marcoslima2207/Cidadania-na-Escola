@@ -1,324 +1,600 @@
 <section class="quiz" aria-labelledby="quiz-title">
-  <header class="quiz-header">
-    <div>
-      <p class="eyebrow">Quiz educativo</p>
-      <h1 id="quiz-title">Sua trilha cidadã</h1>
-      <p>Pequenos passos. Novas descobertas. Uma cidadania mais forte.</p>
-    </div>
-    <img
-      class="header-illustration"
-      src="illustrations/learning-together.webp"
-      alt=""
-      width="900"
-      height="600"
-    />
-  </header>
-  <div class="stats" aria-label="Seu progresso">
-    <div
-      class="hearts"
-      [attr.aria-label]="
-        progress()
-          ? progress()!.vidas + ' de ' + progress()!.max_vidas + ' corações'
-          : 'Entre para acompanhar suas vidas'
-      "
-    >
-      @if (progress(); as actualProgress) {
-        @for (heart of hearts(); track heart) {
-          <span aria-hidden="true" [class.empty]="heart >= actualProgress.vidas">♥</span>
+  <div class="quiz-shell">
+    @if (view() === 'trail') {
+      <nav class="quiz-nav" aria-label="Área do quiz">
+        <div class="nav-brand">
+          <app-icon name="target" /> <span>Quiz da<br />Cidadania</span>
+        </div>
+        @for (item of nav; track item.id) {
+          <button
+            type="button"
+            [class.active]="tab() === item.id || (tab() === 'review' && item.id === 'practice')"
+            [attr.aria-current]="tab() === item.id ? 'page' : null"
+            [attr.aria-label]="item.label"
+            [disabled]="busy() || (item.id === 'ranking' && tabLoading())"
+            (click)="openTab(item.id)"
+          >
+            <app-icon [name]="item.icon" /><span class="nav-full">{{ item.label }}</span
+            ><span class="nav-short">{{ item.short }}</span>
+          </button>
         }
-      } @else {
-        <strong>—</strong>
+      </nav>
+    }
+    <div class="quiz-main">
+      <header class="quiz-header">
+        <div>
+          <p class="eyebrow">Aprendizagem interativa</p>
+          <h1 id="quiz-title">Quiz da Cidadania</h1>
+          <p>Aprenda, pratique e fortaleça sua participação na sociedade.</p>
+        </div>
+        <div class="stats" aria-label="Seu progresso">
+          <div class="stat">
+            <app-icon class="life-icon" name="heart" />
+            <div>
+              <small>Vidas</small
+              ><strong>{{
+                progress() ? progress()!.vidas + '/' + progress()!.max_vidas : '—'
+              }}</strong>
+              @if (recovery()) {
+                <small>Recuperação em {{ recovery() }}</small>
+              }
+              @if (view() === 'lesson') {
+                @if (progress(); as current) {
+                  <div class="hearts" aria-hidden="true">
+                    @for (heart of hearts(); track heart) {
+                      <span [class.empty]="heart >= current.vidas">♥</span>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          </div>
+          <div class="stat">
+            <app-icon class="star-icon" name="star" />
+            <div>
+              <small>XP acumulado</small><strong>{{ (progress()?.xp | number) ?? '—' }}</strong>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      @if (!auth.loggedIn) {
+        <p class="notice"><a routerLink="/acesso">Entre para jogar e salvar seu progresso.</a></p>
       }
-      <small>Vidas do dia</small>
-    </div>
-    <div>
-      <strong class="xp"><app-icon name="bolt" /> {{ progress()?.xp ?? '—' }}</strong
-      ><small>XP conquistado</small>
-    </div>
-    <div>
-      <strong>{{ progress() ? completed().size : '—' }} / {{ levels().length || '—' }}</strong
-      ><small>Lições concluídas</small>
-    </div>
-    <div class="overall-stat">
-      <strong>{{ progress() && levels().length ? overallPercent() + '%' : '—' }}</strong
-      ><small>Progresso na trilha</small>
-      @if (progress() && levels().length) {
-        <div
-          class="overall-track"
-          role="progressbar"
-          aria-label="Progresso na trilha"
-          [attr.aria-valuenow]="overallPercent()"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <span [style.width.%]="overallPercent()"></span>
+      @if (error()) {
+        <div class="notice error" role="alert">
+          <p>{{ error() }}</p>
+          @if (!auth.loggedIn) {
+            <a routerLink="/acesso">Entrar ou criar conta</a>
+          }
+          @if (!loading() && !levels().length) {
+            <button class="button secondary" (click)="load()">Tentar novamente</button>
+          }
         </div>
       }
-    </div>
-  </div>
-  @if (!auth.loggedIn) {
-    <p class="guest-notice">
-      <app-icon name="book" /> Explore a trilha.
-      <a routerLink="/acesso">Entre para jogar e acompanhar seu progresso.</a>
-    </p>
-  }
-  @if (error()) {
-    <div class="notice error" role="alert">
-      <p>{{ error() }}</p>
-      @if (!auth.loggedIn) {
-        <a routerLink="/acesso">Entrar ou criar conta</a>
-      }
-      @if (!loading() && levels().length === 0) {
-        <button class="button secondary" (click)="load()">Tentar novamente</button>
-      }
-    </div>
-  }
-  @if (view() === 'trail') {
-    @if (progressLoading()) {
-      <div class="notice" role="status">Carregando seu progresso...</div>
-    }
-    @if (progressError()) {
-      <div class="notice error" role="alert">
-        <p>{{ progressError() }}</p>
-        @if (sessionExpired()) {
-          <a routerLink="/acesso">Entrar novamente</a>
-        } @else {
-          <button class="button secondary" (click)="loadProgress()">Recarregar progresso</button>
+      @if (view() === 'trail') {
+        @if (progressLoading()) {
+          <p class="notice" role="status">Carregando seu progresso...</p>
         }
-      </div>
-    }
-    @if (loading()) {
-      <div class="panel loading" role="status">Preparando sua trilha...</div>
-    } @else {
-      <div class="trail-layout">
-        <div class="trail">
-          <div class="section-heading">
-            <p class="eyebrow">Um passo de cada vez</p>
-            <h2>Continue sua jornada</h2>
+        @if (progressError()) {
+          <div class="notice error" role="alert">
+            <p>{{ progressError() }}</p>
+            @if (sessionExpired()) {
+              <a routerLink="/acesso">Entrar novamente</a>
+            } @else {
+              <button class="button secondary" (click)="loadProgress()">
+                Recarregar progresso
+              </button>
+            }
           </div>
-          @for (group of topics(); track group.topic.id; let topicIndex = $index) {
-            <section
-              class="topic"
-              [class.is-locked]="
-                !completed().has(group.levels[0].id) && group.levels[0].id !== nextLevel()
-              "
-              [attr.aria-labelledby]="'topic-' + group.topic.id"
-            >
-              <div class="topic-header">
-                <span class="topic-symbol"><app-icon [name]="topicIcon(group.topic.slug)" /></span>
+        }
+        @if (tab() === 'trail' || tab() === 'practice') {
+          <div class="categories" role="group" aria-label="Temas do quiz">
+            @for (group of topics(); track group.topic.slug) {
+              <button
+                type="button"
+                [attr.aria-pressed]="selectedTopicSlug() === group.topic.slug"
+                (click)="activeTopic.set(group.topic.slug)"
+              >
+                <app-icon [name]="topicIcon(group.topic.slug)" />
+                <span
+                  ><strong>{{ group.topic.nome }}</strong
+                  ><small>{{
+                    progress()
+                      ? topicPercent(group.levels) + '% concluído'
+                      : group.levels.length + ' lições'
+                  }}</small></span
+                >
+              </button>
+            }
+          </div>
+          @if (loading()) {
+            <p class="notice" role="status">Preparando sua trilha...</p>
+          }
+        }
+        @if (tab() === 'trail') {
+          @if (topic(); as group) {
+            <div class="overview">
+              <section class="feature">
+                <img src="illustrations/learning-together.webp" width="900" height="600" alt="" />
                 <div>
-                  <small>UNIDADE {{ topicIndex + 1 }}</small>
-                  <h3 [id]="'topic-' + group.topic.id">{{ group.topic.nome }}</h3>
-                  <p>{{ group.topic.descricao }}</p>
-                </div>
-              </div>
-              <div class="level-path">
-                @for (level of group.levels; track level.id; let index = $index) {
-                  <div class="level-step" [class.offset]="index % 2 === 1">
+                  <p class="feature-kicker">
+                    {{ next() ? 'Sua próxima lição' : 'Trilha concluída' }}
+                  </p>
+                  <h2>{{ next()?.titulo ?? group.topic.nome }}</h2>
+                  <p>{{ next()?.descricao || group.topic.descricao }}</p>
+                  @if (next(); as level) {
                     <button
-                      class="level-node"
-                      type="button"
-                      [class.completed]="completed().has(level.id)"
-                      [class.current]="!completed().has(level.id) && level.id === nextLevel()"
+                      class="button gold"
                       [disabled]="
-                        busy() ||
-                        progressLoading() ||
-                        !!progressError() ||
-                        (!completed().has(level.id) && level.id !== nextLevel())
-                      "
-                      [attr.aria-label]="
-                        level.titulo +
-                        (completed().has(level.id)
-                          ? ' — concluído, praticar novamente'
-                          : level.id === nextLevel()
-                            ? ' — começar lição'
-                            : ' — bloqueado')
+                        busy() || progressLoading() || !!progressError() || progress()?.vidas === 0
                       "
                       (click)="start(level)"
                     >
-                      <app-icon
-                        [name]="
-                          completed().has(level.id)
-                            ? 'check'
-                            : level.id === nextLevel()
-                              ? 'play'
-                              : 'lock'
-                        "
-                      />
+                      {{
+                        levelStatus(level) === 'Em andamento'
+                          ? 'Continuar de onde parei'
+                          : 'Começar lição'
+                      }}
+                      <app-icon name="arrow" />
                     </button>
-                    <div class="level-label">
-                      <strong>{{ level.titulo }}</strong>
-                      <small
-                        >{{ level.total_perguntas }} perguntas ·
-                        {{
-                          completed().has(level.id)
-                            ? 'Concluído'
-                            : level.id === nextLevel()
-                              ? 'Sua próxima lição'
-                              : 'Conclua a anterior'
-                        }}</small
+                  } @else {
+                    <button class="button gold" (click)="openTab('practice')">
+                      Praticar este tema <app-icon name="arrow" />
+                    </button>
+                  }
+                </div>
+              </section>
+              <div class="side-cards">
+                <article class="panel mini-card">
+                  <h2><app-icon name="calendar" /> Desafio diário</h2>
+                  @if (daily(); as challenge) {
+                    <p>Responda {{ challenge.total_perguntas }} questões e ganhe XP extra.</p>
+                    <small>{{
+                      challenge.origem === 'ia' ? 'Gerado por IA' : 'Banco educativo'
+                    }}</small>
+                    @if (reward(); as saved) {
+                      <strong class="daily-done"
+                        ><app-icon name="check" /> Concluído hoje!
+                        <span>+{{ saved.xp }} XP</span></strong
                       >
-                    </div>
+                    } @else if (dailyCompletedDate() && dailyCompletedDate() === challenge.data) {
+                      <strong class="daily-done">Desafio concluído nesta sessão!</strong>
+                    } @else {
+                      <button
+                        class="button gold"
+                        [disabled]="
+                          busy() ||
+                          progressLoading() ||
+                          !!progressError() ||
+                          progress()?.vidas === 0
+                        "
+                        (click)="start(null)"
+                      >
+                        Aceitar desafio <app-icon name="arrow" />
+                      </button>
+                    }
+                  } @else if (dailyError()) {
+                    <p role="alert">{{ dailyError() }}</p>
+                    <button class="button secondary" (click)="loadDaily()">Tentar novamente</button>
+                  } @else {
+                    <p role="status">Preparando o desafio de hoje...</p>
+                  }
+                </article>
+                <article class="panel mini-card">
+                  <h2><app-icon name="target" /> Revisar meus erros</h2>
+                  <p>Veja o que errou e pratique novamente no seu ritmo.</p>
+                  <button class="button secondary" [disabled]="busy()" (click)="openTab('review')">
+                    Revisar agora <app-icon name="arrow" />
+                  </button>
+                </article>
+              </div>
+            </div>
+            @if (progress()?.vidas === 0) {
+              <p class="notice">
+                Seus corações acabaram. Você ainda pode
+                <button class="text-button" (click)="openTab('practice')">praticar no treino</button
+                >.
+              </p>
+            }
+            <div class="path-heading" #contentFocus tabindex="-1">
+              <div>
+                <h2>Trilha de aprendizagem</h2>
+                <p>{{ group.topic.nome }} · {{ group.levels.length }} lições</p>
+              </div>
+              @if (progress()) {
+                <div>
+                  <strong>{{ topicPercent(group.levels) }}% concluído</strong
+                  ><progress
+                    [value]="topicPercent(group.levels)"
+                    max="100"
+                    aria-label="Progresso do tema"
+                  ></progress>
+                </div>
+              }
+            </div>
+            <ol class="level-path" [style.--steps]="group.levels.length">
+              @for (level of group.levels; track level.id; let i = $index) {
+                @let status = levelStatus(level);
+                <li
+                  class="level-step"
+                  [class.done]="status === 'Concluída'"
+                  [class.ongoing]="status === 'Em andamento'"
+                  [class.locked]="status === 'Bloqueada'"
+                >
+                  <button
+                    class="level-node"
+                    type="button"
+                    [disabled]="
+                      busy() ||
+                      progressLoading() ||
+                      !!progressError() ||
+                      !available(level) ||
+                      progress()?.vidas === 0
+                    "
+                    [attr.aria-label]="level.titulo + ' — ' + status"
+                    (click)="start(level)"
+                  >
+                    <app-icon
+                      [name]="
+                        status === 'Concluída' ? 'check' : status === 'Bloqueada' ? 'lock' : 'play'
+                      "
+                    />
+                  </button>
+                  <div>
+                    <strong>{{ i + 1 }}. {{ level.titulo }}</strong>
+                    <span class="status-pill">{{ status }}</span>
+                    <small>{{
+                      status === 'Bloqueada'
+                        ? 'Conclua as lições anteriores do tema.'
+                        : level.descricao || group.topic.descricao
+                    }}</small>
+                    @if (status === 'Em andamento') {
+                      <small
+                        >{{ progress()?.em_andamento?.[level.id] }} de
+                        {{ level.total_perguntas }} respondidas</small
+                      >
+                    } @else if (status === 'Disponível') {
+                      <small>Até {{ level.total_perguntas * 10 }} XP</small>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+            <div class="quick-links">
+              @for (item of nav.slice(2); track item.id) {
+                <button type="button" class="panel" (click)="openTab(item.id)">
+                  <app-icon [name]="item.icon" /><strong>{{ item.label }}</strong
+                  ><app-icon name="arrow" />
+                </button>
+              }
+            </div>
+          }
+        }
+        @if (tab() !== 'trail') {
+          <section class="panel tab-panel" #contentFocus tabindex="-1">
+            <h2>
+              {{
+                tab() === 'review'
+                  ? 'Revisar meus erros'
+                  : tab() === 'practice'
+                    ? 'Treino livre'
+                    : tab() === 'missions'
+                      ? 'Missões'
+                      : tab() === 'awards'
+                        ? 'Conquistas'
+                        : tab() === 'history'
+                          ? 'Minha evolução'
+                          : 'Ranking semanal'
+              }}
+            </h2>
+            @if (!auth.loggedIn) {
+              <p><a routerLink="/acesso">Entre na sua conta</a> para acessar esta área.</p>
+            } @else if (tabLoading()) {
+              <p role="status">Carregando...</p>
+            } @else if (tabError()) {
+              <p role="alert">{{ tabError() }}</p>
+              <button class="button secondary" (click)="openTab(tab())">Tentar novamente</button>
+            } @else {
+              @switch (tab()) {
+                @case ('practice') {
+                  <p>
+                    Pratique sem gastar vidas. O treino não altera seu XP nem o progresso da trilha.
+                  </p>
+                  @if (topic(); as group) {
+                    <button
+                      class="button primary"
+                      [disabled]="busy()"
+                      (click)="practice(group.topic.slug)"
+                    >
+                      Praticar {{ group.topic.nome }}
+                    </button>
+                  }
+                  <button class="button secondary" [disabled]="busy()" (click)="openTab('review')">
+                    Revisar meus erros
+                  </button>
+                }
+                @case ('review') {
+                  @if (reviews().length) {
+                    <p>Confira as explicações e tente novamente as questões que errou.</p>
+                    <button class="button primary" [disabled]="busy()" (click)="practice(null)">
+                      Praticar novamente
+                    </button>
+                    @for (review of reviews(); track review.chave) {
+                      <details>
+                        <summary>
+                          {{ review.pergunta.enunciado }}
+                          @if (review.revisada) {
+                            <small>· Revisada</small>
+                          }
+                        </summary>
+                        <p>
+                          <strong>Sua resposta:</strong>
+                          {{ answerLabel(review.pergunta, review.resposta.alternativa) }}
+                        </p>
+                        <p>
+                          <strong>Resposta correta:</strong>
+                          {{ answerLabel(review.pergunta, review.resposta.alternativa_correta) }}
+                        </p>
+                        <p>{{ review.resposta.explicacao }}</p>
+                        <button
+                          type="button"
+                          class="button secondary"
+                          [disabled]="busy()"
+                          (click)="practice(null, review.chave)"
+                        >
+                          Praticar esta questão
+                        </button>
+                        <a [routerLink]="relatedLink(review.pergunta.categoria)"
+                          >Entenda melhor este assunto</a
+                        >
+                      </details>
+                    }
+                  } @else {
+                    <p>Você ainda não tem erros registrados nas lições ou nos desafios.</p>
+                  }
+                }
+                @case ('missions') {
+                  <div class="data-grid">
+                    @for (mission of dashboard()?.missoes; track mission.titulo) {
+                      <article>
+                        <app-icon name="target" />
+                        <h3>{{ mission.titulo }}</h3>
+                        <p>{{ mission.descricao }}</p>
+                        <progress
+                          [value]="mission.atual"
+                          [max]="mission.objetivo"
+                          [attr.aria-label]="mission.titulo"
+                        ></progress>
+                        <small
+                          >{{ mission.atual }} / {{ mission.objetivo }}
+                          @if (mission.atual === mission.objetivo) {
+                            · Concluída
+                          }
+                        </small>
+                      </article>
+                    }
                   </div>
                 }
-              </div>
-            </section>
-          } @empty {
-            <div class="panel">Ainda não há lições disponíveis.</div>
-          }
-        </div>
-        <aside class="sidebar">
-          <div class="panel daily-card">
-            <span class="daily-icon"><app-icon name="trophy" /></span>
-            <p class="eyebrow">Uma nova chance de aprender</p>
-            <h2>Desafio diário</h2>
-            @if (daily(); as dailyQuiz) {
-              <p>{{ dailyQuiz.total_perguntas }} perguntas para explorar todos os temas.</p>
-              @if (dailyCompletedDate() === dailyQuiz.data) {
-                <p class="daily-completed" role="status">
-                  <app-icon name="check" /> Desafio concluído nesta sessão!
-                </p>
+                @case ('awards') {
+                  <div class="data-grid">
+                    @for (award of dashboard()?.conquistas; track award.titulo) {
+                      <article [class.muted]="!award.data">
+                        <app-icon [name]="award.data ? 'trophy' : 'lock'" />
+                        <h3>{{ award.titulo }}</h3>
+                        <p>{{ award.descricao }}</p>
+                        <small>{{
+                          award.data
+                            ? 'Desbloqueada em ' + (award.data | date: 'dd/MM/yyyy' : 'UTC')
+                            : 'Bloqueada'
+                        }}</small>
+                      </article>
+                    }
+                  </div>
+                }
+                @case ('history') {
+                  @if (dashboard(); as data) {
+                    <div class="metrics">
+                      <span
+                        ><strong>{{ progress()?.xp ?? '—' }}</strong> XP total</span
+                      ><span
+                        ><strong>{{ data.xp_semanal }}</strong> XP nesta semana</span
+                      >
+                      <span
+                        ><strong>{{ completed().size }} / {{ levels().length }}</strong> lições
+                        concluídas</span
+                      >
+                      <span
+                        ><strong>{{ data.respondidas }}</strong> respostas oficiais</span
+                      >
+                      <span
+                        ><strong>{{
+                          data.respondidas
+                            ? (data.acertos / data.respondidas | percent: '1.0-0')
+                            : '—'
+                        }}</strong>
+                        de acertos</span
+                      >
+                      <span
+                        ><strong>{{ data.sequencia }}</strong> dias de estudo em sequência</span
+                      >
+                    </div>
+                    <h3>Progresso por tema</h3>
+                    @for (group of topics(); track group.topic.slug) {
+                      <div class="metric-line">
+                        <span>{{ group.topic.nome }} · {{ topicPercent(group.levels) }}%</span
+                        ><progress
+                          [value]="topicPercent(group.levels)"
+                          max="100"
+                          [attr.aria-label]="group.topic.nome"
+                        ></progress>
+                      </div>
+                    }
+                    <h3>Assuntos com mais erros</h3>
+                    @for (entry of data.dificuldades; track entry.categoria) {
+                      <p>
+                        {{ categoryLabel(entry.categoria) }} · {{ entry.erros }}
+                        {{ entry.erros === 1 ? 'erro' : 'erros' }}
+                      </p>
+                    } @empty {
+                      <p>Nenhum erro registrado.</p>
+                    }
+                    <h3>Atividades recentes</h3>
+                    @for (entry of data.historico; track entry.id) {
+                      <div class="history-row">
+                        <strong>{{ entry.titulo }}</strong
+                        ><span
+                          >{{ entry.data | date: 'dd/MM/yyyy' : 'UTC' }} · {{ entry.acertos }}/{{
+                            entry.respondidas
+                          }}
+                          acertos · +{{ entry.xp }} XP</span
+                        >
+                      </div>
+                    } @empty {
+                      <p>
+                        Suas atividades aparecerão aqui depois de responder às primeiras perguntas.
+                      </p>
+                    }
+                  }
+                }
+                @case ('ranking') {
+                  @if (ranking(); as board) {
+                    <p>
+                      Semana de {{ board.inicio | date: 'dd/MM/yyyy' : 'UTC' }}. Ao participar, seu
+                      nome público e avatar ficam visíveis no ranking.
+                    </p>
+                    <button class="button secondary" (click)="setRanking(!board.participante)">
+                      {{ board.participante ? 'Sair do ranking' : 'Participar do ranking' }}
+                    </button>
+                    @if (board.minha_posicao) {
+                      <p>
+                        Sua posição nesta semana: <strong>{{ board.minha_posicao }}º</strong>
+                      </p>
+                    }
+                    <ol class="ranking-list">
+                      @for (entry of board.resultados; track entry.posicao) {
+                        <li [class.mine]="entry.eu">
+                          <strong>{{ entry.posicao }}º</strong
+                          ><img
+                            [src]="entry.avatar_url || avatarImage(entry.avatar_choice)"
+                            alt=""
+                            width="40"
+                            height="40"
+                            referrerpolicy="no-referrer"
+                          /><span
+                            >{{ entry.nome }}
+                            @if (entry.eu) {
+                              (você)
+                            }</span
+                          ><strong>{{ entry.xp }} XP</strong>
+                        </li>
+                      } @empty {
+                        <li>Nenhum participante pontuou nesta semana.</li>
+                      }
+                    </ol>
+                  }
+                }
               }
-              <p class="source">
-                {{ dailyQuiz.data | date: 'dd/MM/yyyy' : 'UTC' }} ·
-                {{ dailyQuiz.origem === 'ia' ? 'Gerado por IA' : 'Banco educativo' }}
-              </p>
+            }
+          </section>
+        }
+      }
+      @if (view() === 'lesson') {
+        @if (question(); as current) {
+          <div class="panel lesson">
+            <div class="lesson-heading" #contentFocus tabindex="-1">
               <button
+                class="back"
                 type="button"
-                class="button primary"
-                (click)="start(null)"
-                [disabled]="busy() || progressLoading() || !!progressError()"
+                (click)="backToTrail()"
+                [disabled]="busy()"
+                aria-label="Voltar"
               >
-                {{
-                  busy()
-                    ? 'Preparando...'
-                    : dailyCompletedDate() === dailyQuiz.data
-                      ? 'Praticar novamente'
-                      : 'Iniciar desafio'
-                }}
-                <app-icon name="arrow" />
+                <app-icon name="back" />
               </button>
-            } @else if (!dailyError()) {
-              <p role="status">Preparando o desafio de hoje...</p>
-            }
-            @if (dailyError()) {
-              <p role="status">{{ dailyError() }}</p>
-              <button class="button secondary" (click)="loadDaily()">Tentar novamente</button>
-            }
-          </div>
-          <div class="panel tips">
-            <h3>Como funciona?</h3>
-            <p>
-              ♥ Você começa com 5 corações. Cada erro usa um; eles se renovam à meia-noite de
-              Brasília.
-            </p>
-            <p>★ Acerte pelo menos 70% da lição para liberar a próxima.</p>
-            <p>
-              ⚡ Cada acerto vale 10 XP na primeira conclusão aprovada. Repetir ajuda a aprender.
-            </p>
-            @if (!auth.loggedIn) {
-              <a routerLink="/acesso" class="button secondary">Entre para começar</a>
-            }
-          </div>
-        </aside>
-      </div>
-    }
-  }
-  @if (view() === 'lesson') {
-    @if (question(); as currentQuestion) {
-      <div class="panel lesson">
-        <div class="lesson-heading" #contentFocus tabindex="-1">
-          <button
-            class="back"
-            type="button"
-            (click)="backToTrail()"
-            [disabled]="busy()"
-            aria-label="Voltar para a trilha"
-          >
-            ←</button
-          ><span>{{ lessonTitle() }}</span
-          ><strong>{{ currentIndex() + 1 }} / {{ attempt()?.perguntas?.length }}</strong>
-        </div>
-        <div
-          class="progress-bar"
-          role="progressbar"
-          [attr.aria-valuenow]="percent()"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-label="Progresso da lição"
-        >
-          <span [style.width.%]="percent()"></span>
-        </div>
-        <p class="eyebrow question-label">Pergunta {{ currentIndex() + 1 }}</p>
-        <app-quiz-question
-          [question]="currentQuestion"
-          [selected]="selected()"
-          [feedback]="feedback()"
-          [disabled]="busy() || !!feedback()"
-          (choose)="selected.set($event)"
-        />
-        @if (feedback(); as result) {
-          <div class="feedback" [class.wrong]="!result.correta" role="status" aria-live="polite">
-            <strong>{{
-              result.correta ? 'Muito bem! Você acertou.' : 'Faz parte do aprendizado!'
-            }}</strong>
-            <p>{{ result.explicacao }}</p>
-            @if (!result.correta) {
-              <small>Um coração foi usado. A resposta correta está destacada em verde.</small>
+              <span>{{ lessonTitle() }}</span
+              ><strong>{{ currentIndex() + 1 }} / {{ attempt()?.perguntas?.length }}</strong>
+            </div>
+            <progress [value]="percent()" max="100" aria-label="Progresso da atividade"></progress>
+            <p class="eyebrow question-label">Pergunta {{ currentIndex() + 1 }}</p>
+            <app-quiz-question
+              [question]="current"
+              [selected]="selected()"
+              [feedback]="feedback()"
+              [disabled]="busy() || !!feedback()"
+              (choose)="selected.set($event)"
+            />
+            @if (feedback(); as result) {
+              <div class="feedback" [class.wrong]="!result.correta" role="status">
+                <strong>{{
+                  result.correta ? 'Muito bem! Você acertou.' : 'Vamos entender a resposta'
+                }}</strong>
+                <p>{{ result.explicacao }}</p>
+                @if (!result.correta) {
+                  <p>
+                    <strong>Resposta correta:</strong>
+                    {{ answerLabel(current, result.alternativa_correta) }}
+                  </p>
+                  @if (!practiceMode()) {
+                    <p>Você usou um coração.</p>
+                  }
+                }
+                <a [routerLink]="relatedLink(current.categoria)">Entenda melhor este assunto</a>
+              </div>
+              <button class="button primary continue" type="button" (click)="continueLesson()">
+                {{ attempt()?.concluida ? 'Ver resultado' : 'Continuar' }}
+              </button>
+            } @else {
+              <button
+                class="button primary continue"
+                type="button"
+                [disabled]="!selected() || busy()"
+                (click)="submitAnswer()"
+              >
+                {{ busy() ? 'Verificando...' : 'Verificar resposta' }}
+              </button>
             }
           </div>
-          <button class="button primary continue" type="button" (click)="continueLesson()">
-            {{ attempt()?.concluida ? 'Ver resultado' : 'Continuar' }}
-          </button>
-        } @else {
-          <button
-            class="button primary continue"
-            type="button"
-            [disabled]="!selected() || busy()"
-            (click)="submitAnswer()"
-          >
-            {{ busy() ? 'Verificando...' : 'Verificar resposta' }}
-          </button>
         }
-      </div>
-    }
-  }
-  @if (view() === 'result') {
-    @if (attempt(); as result) {
-      <div class="panel result" aria-live="polite" #contentFocus tabindex="-1">
-        <span class="result-icon" aria-hidden="true">{{
-          result.aprovado ? '🏆' : progress()?.vidas === 0 ? '♥' : '🌱'
-        }}</span>
-        <p class="eyebrow">{{ result.aprovado ? 'Lição concluída' : 'Cada tentativa ensina' }}</p>
-        <h2>
-          {{
-            result.aprovado
-              ? 'Mais um passo na sua jornada!'
-              : progress()?.vidas === 0
-                ? 'Hora de recarregar os corações'
-                : 'Você está no caminho certo!'
-          }}
-        </h2>
-        <p>
-          Você acertou
-          <strong>{{ result.acertos }} de {{ result.perguntas.length }}</strong> perguntas.
-        </p>
-        @if (result.xp_ganho) {
-          <div class="xp-reward">⚡ +{{ result.xp_ganho }} XP</div>
+      }
+      @if (view() === 'result') {
+        @if (attempt(); as result) {
+          <div class="panel result" #contentFocus tabindex="-1">
+            <app-icon [name]="result.aprovado ? 'trophy' : 'target'" />
+            <p class="eyebrow">
+              {{ practiceMode() ? 'Prática concluída' : 'Resultado da atividade' }}
+            </p>
+            <h2>
+              {{
+                practiceMode()
+                  ? 'Seu resultado'
+                  : result.aprovado
+                    ? 'Atividade concluída!'
+                    : 'Continue praticando'
+              }}
+            </h2>
+            <p>
+              Você acertou
+              <strong>{{ result.acertos }} de {{ result.perguntas.length }}</strong> perguntas.
+            </p>
+            @if (result.xp_ganho) {
+              <strong class="status-pill xp-reward">+{{ result.xp_ganho }} XP</strong>
+            }
+            @if (!result.aprovado && !practiceMode()) {
+              <p>
+                {{
+                  progress()?.vidas === 0
+                    ? 'As vidas voltam à meia-noite. Você pode usar o treino enquanto isso.'
+                    : 'Para concluir a atividade, acerte pelo menos 70% das perguntas.'
+                }}
+              </p>
+            }
+            <button class="button primary" type="button" (click)="backToTrail()">
+              Voltar para {{ tab() === 'trail' ? 'a trilha' : 'a prática' }}
+            </button>
+          </div>
         }
-        <p>
-          {{
-            result.aprovado
-              ? 'Continue explorando a trilha e coloque seu conhecimento em prática.'
-              : progress()?.vidas === 0
-                ? 'Seus cinco corações estarão de volta amanhã. Seu progresso está salvo.'
-                : 'Você precisa de pelo menos 70% de acertos. Releia as explicações e tente outra vez.'
-          }}
-        </p>
-        <button class="button primary" type="button" (click)="backToTrail()">
-          Voltar para a trilha
-        </button>
-      </div>
-    }
-  }
+      }
+    </div>
+  </div>
 </section>

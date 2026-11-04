@@ -164,7 +164,7 @@ describe('Quiz gamificado', () => {
     expect(pendingLevels.cancelled).toBe(true);
     expect(fixture.componentInstance.loading()).toBe(false);
     expect(fixture.nativeElement.textContent).not.toContain('Preparando sua trilha');
-    fixture.nativeElement.querySelector('.notice button').click();
+    fixture.nativeElement.querySelector('.notice.error button').click();
     http.expectOne(`${api}/nivel/`).flush([level]);
     http.expectOne(`${api}/diario/`).flush({});
     expect(fixture.componentInstance.levels()).toEqual([level]);
@@ -307,5 +307,61 @@ describe('Quiz gamificado', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Desafio concluído nesta sessão!');
     expect(component.progress()?.xp).toBe(30);
+  });
+
+  it('alterna a trilha visível e apresenta a retomada salva no tema correspondente', () => {
+    const fixture = TestBed.createComponent(QuizComponent);
+    const democracy = {
+      ...level,
+      id: 3,
+      ordem: 3,
+      titulo: 'Participação democrática',
+      tema: { ...level.tema, id: 2, nome: 'Democracia', slug: 'democracia' },
+    };
+    fixture.detectChanges();
+    http.expectOne(`${api}/nivel/`).flush([level, democracy]);
+    http.expectOne(`${api}/progresso/`).flush({ ...progress, em_andamento: { 3: 2 } });
+    http.expectOne(`${api}/diario/`).flush({});
+    fixture.detectChanges();
+    const categories = fixture.nativeElement.querySelectorAll('.categories button');
+    categories[1].click();
+    fixture.detectChanges();
+    expect(categories[1].getAttribute('aria-pressed')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.feature').textContent).toContain(
+      'Continuar de onde parei',
+    );
+    expect(fixture.nativeElement.querySelector('.level-path').textContent).toContain(
+      '2 de 3 respondidas',
+    );
+    expect(fixture.nativeElement.querySelectorAll('.level-node').length).toBe(1);
+  });
+
+  it('inicia treino sem vidas e não exibe penalidade ao errar', () => {
+    const fixture = create();
+    const component = fixture.componentInstance;
+    component.progress.set({ ...progress, vidas: 0 });
+    component.openTab('practice');
+    component.practice('cidadania');
+    const practiceSession = {
+      ...session,
+      progresso: { ...progress, vidas: 0 },
+      tentativa: { ...session.tentativa, modo: 'treino' as const },
+    };
+    const start = http.expectOne(`${api}/treino/`);
+    expect(start.request.body).toEqual({ tema: 'cidadania' });
+    start.flush(practiceSession);
+    component.selected.set('b');
+    component.submitAnswer();
+    http.expectOne(`${api}/tentativas/8/responder/`).flush({
+      ...practiceSession,
+      alternativa: 'b',
+      correta: false,
+      alternativa_correta: 'a',
+      explicacao: 'Participar fortalece a comunidade.',
+    });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.feedback').textContent).not.toContain(
+      'usou um coração',
+    );
   });
 });

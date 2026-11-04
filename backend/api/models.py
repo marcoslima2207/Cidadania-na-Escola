@@ -210,6 +210,7 @@ class Tema(models.Model):
 class Nivel(models.Model):
     tema = models.ForeignKey(Tema, on_delete=models.PROTECT, related_name="niveis")
     titulo = models.CharField(max_length=100)
+    descricao = models.CharField(max_length=240, blank=True)
     ordem = models.PositiveIntegerField(unique=True)
 
     class Meta:
@@ -235,6 +236,7 @@ class ProgressoUsuario(models.Model):
     vidas = models.PositiveSmallIntegerField(default=5)
     data_vidas = models.DateField(default=timezone.localdate)
     xp = models.PositiveIntegerField(default=0)
+    participa_ranking = models.BooleanField(default=False)
     niveis_concluidos = models.ManyToManyField(Nivel, blank=True)
 
     class Meta:
@@ -244,28 +246,41 @@ class ProgressoUsuario(models.Model):
 
 
 class TentativaQuiz(models.Model):
+    OFICIAL = "oficial"
+    TREINO = "treino"
+    REVISAO = "revisao"
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tentativas_quiz"
     )
     nivel = models.ForeignKey(Nivel, null=True, blank=True, on_delete=models.PROTECT)
     diario = models.ForeignKey(QuizDiario, null=True, blank=True, on_delete=models.PROTECT)
+    modo = models.CharField(
+        max_length=7,
+        choices=[(OFICIAL, "Oficial"), (TREINO, "Treino"), (REVISAO, "Revisão")],
+        default=OFICIAL,
+    )
     perguntas = models.JSONField(default=list)
     respostas = models.JSONField(default=dict)
     concluida = models.BooleanField(default=False)
     aprovado = models.BooleanField(default=False)
     xp_ganho = models.PositiveIntegerField(default=0)
     criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
 
     class Meta:
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    models.Q(nivel__isnull=False, diario__isnull=True)
-                    | models.Q(nivel__isnull=True, diario__isnull=False)
+                    models.Q(modo__in=["oficial", "treino"], nivel__isnull=False, diario__isnull=True)
+                    | models.Q(modo="oficial", nivel__isnull=True, diario__isnull=False)
+                    | models.Q(modo="revisao", nivel__isnull=True, diario__isnull=True)
                 ),
                 name="quiz_tentativa_uma_origem",
             )
         ]
+        indexes = [models.Index(fields=["atualizado_em"], condition=models.Q(xp_ganho__gt=0),
+                                name="quiz_xp_semanal_idx")]
 
 
 class GoogleIdentity(models.Model):

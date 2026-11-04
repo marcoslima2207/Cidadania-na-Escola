@@ -14,6 +14,7 @@ export interface Level {
   ordem: number;
   tema: Topic;
   total_perguntas: number;
+  descricao?: string;
 }
 
 export interface Question {
@@ -32,6 +33,9 @@ export interface QuizProgress {
   xp: number;
   niveis_concluidos: number[];
   proximo_nivel: number | null;
+  recupera_em?: string;
+  em_andamento?: Record<number, number>;
+  diario_concluido?: { data: string; xp: number } | null;
 }
 
 export interface DailyQuiz {
@@ -50,6 +54,7 @@ export interface QuizAttempt {
   concluida: boolean;
   aprovado: boolean;
   xp_ganho: number;
+  modo?: 'oficial' | 'treino' | 'revisao';
 }
 
 export interface AttemptResponse {
@@ -65,3 +70,42 @@ export interface AnswerFeedback {
 }
 
 export interface AnswerResponse extends AttemptResponse, AnswerFeedback {}
+
+export interface QuizReview {
+  chave: string;
+  pergunta: Question;
+  resposta: AnswerFeedback;
+  revisada: boolean;
+}
+
+export interface QuizDashboard {
+  respondidas: number;
+  acertos: number;
+  sequencia: number;
+  xp_semanal: number;
+  dificuldades: { categoria: string; erros: number }[];
+  historico: {
+    id: number;
+    titulo: string;
+    data: string;
+    xp: number;
+    acertos: number;
+    respondidas: number;
+  }[];
+  missoes: { titulo: string; descricao: string; atual: number; objetivo: number }[];
+  conquistas: { titulo: string; descricao: string; data: string | null }[];
+}
+
+export interface QuizRanking {
+  inicio: string;
+  participante: boolean;
+  minha_posicao: number | null;
+  resultados: {
+    posicao: number;
+    nome: string;
+    avatar_url: string;
+    avatar_choice: string;
+    xp: number;
+    eu: boolean;
+  }[];
+}

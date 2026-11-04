@@ -14,6 +14,7 @@ from .models import Pergunta, QuizDiario
 from .quiz_serializers import PerguntaGeradaSerializer
 
 logger = logging.getLogger(__name__)
+DAILY_QUESTION_COUNT = 5
 QUESTION_FIELDS = (
     "enunciado",
     "opcao_a",
@@ -27,30 +28,27 @@ QUESTION_FIELDS = (
 
 class QuizIndisponivel(APIException):
     status_code = 503
-    default_detail = "O desafio diário está sendo preparado. Tente novamente em alguns instantes."
+    default_detail = (
+        "O desafio diário está sendo preparado. Tente novamente em alguns instantes."
+    )
 
 
 def generate_questions(day):
     yesterday = QuizDiario.objects.filter(data=day - timedelta(days=1)).first()
     previous = (
-        {q["enunciado"].strip().casefold() for q in yesterday.perguntas} if yesterday else set()
+        {q["enunciado"].strip().casefold() for q in yesterday.perguntas}
+        if yesterday
+        else set()
     )
     if settings.GEMINI_API_KEY:
         try:
             fields = {field: {"type": "string"} for field in QUESTION_FIELDS}
             fields["alternativa_correta"]["enum"] = list("abc")
-            fields["categoria"]["enum"] = [
-                "cidadania",
-                "democracia",
-                "desinformacao",
-                "checagem",
-                "trabalhista",
-                "educacao",
-            ]
+            fields["categoria"]["enum"] = ["cidadania"]
             prompt = (
-                f"Crie 12 perguntas inéditas para {day}, em português brasileiro acessível a alunos da EJA. "
-                "Use duas perguntas de cada categoria: cidadania, democracia, desinformacao, checagem, "
-                "trabalhista e educacao. Três alternativas, exatamente uma correta, com explicação educativa. "
+                f"Crie {DAILY_QUESTION_COUNT} perguntas inéditas para {day}, em português brasileiro acessível a alunos da EJA. "
+                "Use a categoria cidadania e aborde direitos, deveres e participação na comunidade. "
+                "Três alternativas, exatamente uma correta, com explicação educativa. "
                 "Varie a posição da alternativa correta. Use conceitos estáveis, sem notícias recentes, "
                 "sem aconselhamento jurídico, conteúdo partidário ou estereótipos. "
                 f"Não repita estes enunciados do dia anterior: {json.dumps(sorted(previous), ensure_ascii=False)}"
@@ -64,8 +62,8 @@ def generate_questions(day):
                     "mime_type": "application/json",
                     "schema": {
                         "type": "array",
-                        "minItems": 12,
-                        "maxItems": 12,
+                        "minItems": DAILY_QUESTION_COUNT,
+                        "maxItems": DAILY_QUESTION_COUNT,
                         "items": {
                             "type": "object",
                             "properties": fields,
@@ -99,15 +97,24 @@ def generate_questions(day):
             serializer.is_valid(raise_exception=True)
             questions = serializer.validated_data
             enunciados = {q["enunciado"].strip().casefold() for q in questions}
-            categories = fields["categoria"]["enum"]
-            if len(questions) != 12 or len(enunciados) != 12 or enunciados & previous:
-                raise ValueError("Perguntas repetidas ou quantidade inválida.")
-            if any(
-                sum(q["categoria"] == category for q in questions) != 2 for category in categories
+            if (
+                len(questions) != DAILY_QUESTION_COUNT
+                or len(enunciados) != DAILY_QUESTION_COUNT
+                or enunciados & previous
             ):
+                raise ValueError("Perguntas repetidas ou quantidade inválida.")
+            if any(q["categoria"] != "cidadania" for q in questions):
                 raise ValueError("Distribuição de temas inválida.")
             return questions, "ia"
-        except (URLError, TimeoutError, OSError, ValueError, KeyError, TypeError, ValidationError):
+        except (
+            URLError,
+            TimeoutError,
+            OSError,
+            ValueError,
+            KeyError,
+            TypeError,
+            ValidationError,
+        ):
             # Não registra a resposta do provedor ou credenciais nos logs.
             logger.warning(
                 "Geração do quiz diário indisponível ou inválida; usando o banco educativo."
@@ -115,25 +122,14 @@ def generate_questions(day):
 
     pool = [
         q
-        for q in Pergunta.objects.filter(nivel__isnull=False).values(*QUESTION_FIELDS)
+        for q in Pergunta.objects.filter(nivel__isnull=False, categoria="cidadania")
+        .order_by("id")
+        .values(*QUESTION_FIELDS)
         if q["enunciado"].strip().casefold() not in previous
     ]
-    rng = random.Random(day.isoformat())
-    questions = []
-    for category in [
-        "cidadania",
-        "democracia",
-        "desinformacao",
-        "checagem",
-        "trabalhista",
-        "educacao",
-    ]:
-        category_pool = [question for question in pool if question["categoria"] == category]
-        if len(category_pool) < 2:
-            raise QuizIndisponivel()
-        questions.extend(rng.sample(category_pool, 2))
-    rng.shuffle(questions)
-    return questions, "reserva"
+    if len(pool) < DAILY_QUESTION_COUNT:
+        raise QuizIndisponivel()
+    return random.Random(day.isoformat()).sample(pool, DAILY_QUESTION_COUNT), "reserva"
 
 
 def get_daily_quiz(day=None):

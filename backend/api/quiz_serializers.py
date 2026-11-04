@@ -6,7 +6,7 @@ from .models import Nivel, Tema
 class TemaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tema
-        fields = ["id", "nome", "slug", "descricao", "icone"]
+        fields = ("id", "nome", "slug", "descricao", "icone")
 
 
 class NivelSerializer(serializers.ModelSerializer):
@@ -15,12 +15,35 @@ class NivelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Nivel
-        fields = ["id", "titulo", "ordem", "tema", "total_perguntas"]
+        fields = ("id", "titulo", "descricao", "ordem", "tema", "total_perguntas")
 
 
 class RespostaSerializer(serializers.Serializer):
     pergunta_id = serializers.IntegerField(min_value=1)
     alternativa = serializers.ChoiceField(choices=["a", "b", "c"])
+
+
+class TreinoSerializer(serializers.Serializer):
+    tema = serializers.SlugField(max_length=50, allow_null=True)
+    questao = serializers.RegexField(r"^[0-9a-f]{64}$", required=False)
+
+    def validate(self, attrs):
+        if attrs["tema"] is not None and "questao" in attrs:
+            raise serializers.ValidationError(
+                "A questão específica só pode ser usada na revisão."
+            )
+        return attrs
+
+
+class RankingSerializer(serializers.Serializer):
+    participar = serializers.JSONField()
+
+    def validate_participar(self, value):
+        if not isinstance(value, bool):
+            raise serializers.ValidationError(
+                "Informe se deseja participar do ranking."
+            )
+        return value
 
 
 class PerguntaGeradaSerializer(serializers.Serializer):
@@ -30,12 +53,21 @@ class PerguntaGeradaSerializer(serializers.Serializer):
     opcao_c = serializers.CharField(max_length=400)
     alternativa_correta = serializers.ChoiceField(choices=["a", "b", "c"])
     categoria = serializers.ChoiceField(
-        choices=["cidadania", "democracia", "desinformacao", "checagem", "trabalhista", "educacao"]
+        choices=[
+            "cidadania",
+            "democracia",
+            "desinformacao",
+            "checagem",
+            "trabalhista",
+            "educacao",
+        ]
     )
     explicacao = serializers.CharField(min_length=10, max_length=1200)
 
     def validate(self, attrs):
         options = [attrs[f"opcao_{letter}"].casefold() for letter in "abc"]
         if len(set(options)) != 3:
-            raise serializers.ValidationError("As alternativas precisam ser diferentes.")
+            raise serializers.ValidationError(
+                "As alternativas precisam ser diferentes."
+            )
         return attrs
