@@ -10,3 +10,4 @@ gunicorn>=23,<24
 psycopg[binary]>=3.2,<4
 google-auth[requests]>=2.40,<3
 PyJWT[crypto]>=2.10,<3
+Pillow>=12,<13

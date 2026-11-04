@@ -15,6 +15,10 @@ import { Component, input } from '@angular/core';
     focusable="false"
   >
     @switch (name()) {
+      @case ('chevron-down') { <path d="m6 9 6 6 6-6" /> }
+      @case ('settings') { <path d="M12 8v8m-4-4h8M5 5h14v14H5Z" /> }
+      @case ('logout') { <path d="M10 4H4v16h6m4-12 4 4-4 4m-6-4h10" /> }
+      @case ('bookmark') { <path d="M6 4h12v16l-6-4-6 4Z" /> }
       @case ('bank') {
         <path d="m3 8 9-5 9 5H3ZM4 21h16M5 18h14M6 10v6m6-6v6m6-6v6" />
       }

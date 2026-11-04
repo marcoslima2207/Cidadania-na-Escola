@@ -2,6 +2,8 @@
 from django.contrib.auth import get_user_model
 import base64
 import tempfile
+from io import BytesIO
+from PIL import Image
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -44,6 +46,49 @@ class ApiEndpointsTests(APITestCase):
             email='aluno@email.com',
             password='12345678'
         )
+
+    def avatar_upload(self, name="foto.jpg"):
+        output = BytesIO()
+        Image.new("RGB", (20, 20), "blue").save(output, "JPEG")
+        return SimpleUploadedFile(name, output.getvalue(), content_type="image/jpeg")
+
+    def test_favorites_are_private_and_independent_of_likes(self):
+        other = User.objects.create_user(username="outra")
+        own = Post.objects.create(user=self.user, title="Minha", content="Texto", category="Cidadania")
+        post = Post.objects.create(user=other, title="Outra", content="Texto", category="Cidadania")
+        url = reverse("post-favorite", args=[post.id])
+        self.assertEqual(self.client.put(url).status_code, 401)
+        self.assertEqual(self.client.get(reverse("post-list"), {"lista": "favoritos"}).status_code, 401)
+        self.client.force_authenticate(self.user)
+        for _ in range(2):
+            self.assertTrue(self.client.put(url).data["saved_by_me"])
+        favorite = self.client.get(reverse("post-list"), {"lista": "favoritos"}).data
+        self.assertEqual([item["id"] for item in favorite], [post.id])
+        self.assertEqual(favorite[0]["likes_count"], 0)
+        own_posts = self.client.get(reverse("post-list"), {"lista": "minhas"}).data
+        self.assertEqual([item["id"] for item in own_posts], [own.id])
+        self.client.force_authenticate(other)
+        self.assertEqual(self.client.get(reverse("post-list"), {"lista": "favoritos"}).data, [])
+        self.client.force_authenticate(self.user)
+        self.assertFalse(self.client.delete(url).data["saved_by_me"])
+        self.assertEqual(self.client.get(reverse("post-list"), {"lista": "favoritos"}).data, [])
+
+    def test_avatar_survives_logout_and_new_login_without_media_disk(self):
+        def login():
+            response = self.client.post(reverse("auth-login"), {"username": "aluno", "password": "12345678"})
+            self.client.credentials(HTTP_AUTHORIZATION="Token " + response.data["token"])
+
+        login()
+        url = reverse("auth-profile")
+        photo = self.client.patch(url, {"avatar_file": self.avatar_upload()}, format="multipart").data["avatar_file_url"]
+        self.assertFalse(Profile.objects.get(user=self.user).avatar_file)
+        self.assertEqual(self.client.post(reverse("auth-logout")).status_code, 204)
+        self.client.credentials()
+        self.assertEqual(self.client.get(photo)["Content-Type"], "image/webp")
+        login()
+        self.assertEqual(self.client.get(url).data["avatar_file_url"], photo)
+        self.assertEqual(self.client.patch(url, {"avatar_choice": "portrait01"}).data["avatar_file_url"], "")
+        self.assertEqual(self.client.get(photo).status_code, 404)
 
     def test_media_only_posts_accept_photo_and_video_without_written_fields(self):
         self.client.force_authenticate(self.user)
@@ -287,7 +332,7 @@ class ApiEndpointsTests(APITestCase):
     # A foto do perfil é gravada e usada também nas publicações do seu autor.
     def test_profile_upload_is_displayed_in_community(self):
         self.client.force_authenticate(self.user)
-        photo = SimpleUploadedFile('foto.jfif', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        photo = self.avatar_upload('foto.jfif')
         response = self.client.patch(reverse('auth-profile'), {'bio': 'Minha bio', 'avatar_file': photo}, format='multipart')
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.data['avatar_file_url'].startswith('http://testserver/media/avatars/'))
@@ -310,9 +355,10 @@ class ApiEndpointsTests(APITestCase):
     # Escolher uma ilustração precisa substituir a foto antiga em vez de ficar escondida por ela.
     def test_profile_illustration_replaces_photo_and_preserves_account(self):
         self.client.force_authenticate(self.user)
-        photo = SimpleUploadedFile('foto.jpg', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
-        self.client.patch(reverse('auth-profile'), {'avatar_file': photo}, format='multipart')
-        old_file = Profile.objects.get(user=self.user).avatar_file
+        photo = self.avatar_upload('foto.jpg')
+        profile, _ = Profile.objects.get_or_create(user=self.user)
+        profile.avatar_file.save(photo.name, photo)
+        old_file = profile.avatar_file
         with self.captureOnCommitCallbacks(execute=True):
             response = self.client.patch(reverse('auth-profile'), {'avatar_choice': 'portrait07', 'username': 'fraude', 'email': 'fraude@example.com'}, format='json')
         self.assertEqual(response.status_code, 200)
@@ -327,7 +373,7 @@ class ApiEndpointsTests(APITestCase):
     def test_profile_upload_validation_and_choices(self):
         self.assertEqual(self.client.patch(reverse('auth-profile'), {'bio': 'Não autorizado'}, format='json').status_code, 401)
         self.client.force_authenticate(self.user)
-        for name, data, mime in [('arquivo.svg', b'<svg/>', 'image/svg+xml'), ('falso.png', b'<html/>', 'image/png'), ('vazio.jpg', b'', 'image/jpeg'), ('grande.jpg', b'\xff\xd8\xff' + b'0' * (5 * 1024 * 1024), 'image/jpeg')]:
+        for name, data, mime in [('arquivo.svg', b'<svg/>', 'image/svg+xml'), ('falso.png', b'\x89PNG\r\n\x1a\n' + b'<html/>', 'image/png'), ('vazio.jpg', b'', 'image/jpeg'), ('grande.jpg', b'\xff\xd8\xff' + b'0' * (5 * 1024 * 1024), 'image/jpeg')]:
             response = self.client.patch(reverse('auth-profile'), {'avatar_file': SimpleUploadedFile(name, data, content_type=mime)}, format='multipart')
             self.assertEqual(response.status_code, 400)
         for old in ['sun', 'leaf', 'star', 'book']:
@@ -339,7 +385,7 @@ class ApiEndpointsTests(APITestCase):
     # Atualizar somente a bio mantém a foto; um link escolhido depois substitui o upload.
     def test_profile_bio_preserves_photo_and_url_replaces_upload(self):
         self.client.force_authenticate(self.user)
-        photo = SimpleUploadedFile('foto.jpg', b'\xff\xd8\xff' + b'0' * 32, content_type='image/jpeg')
+        photo = self.avatar_upload('foto.jpg')
         uploaded = self.client.patch(reverse('auth-profile'), {'avatar_file': photo}, format='multipart')
         bio = self.client.patch(reverse('auth-profile'), {'bio': 'Bio atualizada'}, format='json')
         self.assertEqual(bio.data['avatar_file_url'], uploaded.data['avatar_file_url'])

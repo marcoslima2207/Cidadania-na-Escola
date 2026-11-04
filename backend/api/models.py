@@ -77,6 +77,8 @@ class Profile(models.Model):
     bio = models.CharField(max_length=240, blank=True)
     avatar_url = models.URLField(blank=True)
     # A foto enviada fica no armazenamento de mídia; o banco guarda seu caminho.
+    avatar_key = models.UUIDField(null=True, unique=True, editable=False)
+    avatar_image = models.BinaryField(null=True, editable=False)
     avatar_file = models.FileField(upload_to="avatars/%Y/%m/", blank=True, null=True)
     avatar_choice = models.CharField(max_length=20, choices=AVATAR_CHOICES, default="portrait01")
 
@@ -86,6 +88,16 @@ class Profile(models.Model):
 
 
 # INTERAÇÕES: registro único de curtida por usuário e postagem.
+class PostFavorite(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="favorites")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["post", "user"], name="unique_post_favorite"),
+        ]
+
+
 class PostLike(models.Model):
     # Liga uma pessoa a um post e permite consultar as curtidas pelos dois lados.
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")

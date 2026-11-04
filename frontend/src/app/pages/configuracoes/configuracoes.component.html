@@ -1,0 +1,39 @@
+<section class="settings ce-container" aria-labelledby="settings-title">
+  <p class="ce-eyebrow">Minha conta</p>
+  <h1 id="settings-title" class="ce-title">Configurações</h1>
+  <p class="ce-lead">Consulte seus dados de acesso e gerencie a segurança da conta.</p>
+
+  <section class="settings-card ce-card" aria-labelledby="security-title" [attr.aria-busy]="loading()">
+    <h2 id="security-title">Conta e segurança</h2>
+    @if (loading()) {
+      <p role="status">Carregando dados da conta…</p>
+    } @else if (error()) {
+      <p role="alert" class="ce-notice ce-notice--error">{{ error() }}</p>
+      <button type="button" class="ce-button ce-button--secondary" (click)="load()">Tentar novamente</button>
+    } @else {
+      <dl>
+        <div><dt>E-mail cadastrado</dt><dd>{{ email() }}</dd></div>
+        <div><dt>Métodos de login vinculados</dt><dd>{{ methods() }}</dd></div>
+      </dl>
+      @if (managed()) {
+        @if (passwordEnabled()) {
+          <p>Para gerenciar sua senha, abra o painel e acesse a seção <strong>Segurança</strong>.</p>
+        }
+        <button class="ce-button" type="button" (click)="openSecurity()" [disabled]="opening()">
+          {{ opening() ? 'Abrindo…' : 'E-mail e segurança da conta' }}
+        </button>
+        @if (securityError()) {
+          <p role="alert" class="ce-notice ce-notice--error">{{ securityError() }}</p>
+        }
+      } @else {
+        <p>O gerenciamento de segurança pelo painel está disponível nas contas que usam Clerk.</p>
+      }
+    }
+  </section>
+
+  <section class="settings-card ce-card" aria-labelledby="appearance-title">
+    <h2 id="appearance-title">Aparência na comunidade</h2>
+    <p>Altere sua foto, ilustração ou bio na página de perfil.</p>
+    <a routerLink="/perfil" class="ce-button ce-button--secondary">Editar perfil</a>
+  </section>
+</section>

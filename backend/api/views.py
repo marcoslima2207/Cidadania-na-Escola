@@ -5,11 +5,12 @@ import unicodedata
 from pathlib import Path
 
 from django.conf import settings
+from django.db.models import Exists, OuterRef
 from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -20,6 +21,7 @@ from .models import (
     Pergunta,
     Post,
     PostLike,
+    PostFavorite,
     Profile,
     Resultado,
     Usuario,
@@ -49,6 +51,16 @@ def auth_response(user):
             "email": user.email,
         },
     }
+
+
+def serve_profile_avatar(request, key):
+    image = Profile.objects.filter(avatar_key=key).values_list("avatar_image", flat=True).first()
+    if not image:
+        raise Http404
+    response = HttpResponse(bytes(image), content_type="image/webp")
+    response["Cache-Control"] = "public, max-age=300"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 # MIDIA: serve arquivos enviados sem permitir acesso fora de MEDIA_ROOT.
@@ -164,7 +176,7 @@ class PostViewSet(viewsets.ModelViewSet):
     # Carrega autor, perfil e interações junto aos posts para reduzir consultas repetidas.
     queryset = (
         Post.objects.select_related("user", "user__profile")
-        .prefetch_related("likes", "comments")
+        .defer("user__profile__avatar_image").prefetch_related("likes", "comments")
         .order_by("-created_at", "-id")
     )
     serializer_class = PostSerializer
@@ -174,7 +186,7 @@ class PostViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == "comments" and self.request.method == "GET":
             return [AllowAny()]
-        if self.action in ["create", "update", "partial_update", "destroy", "like", "comments"]:
+        if self.action in ["create", "update", "partial_update", "destroy", "like", "favorite", "comments"]:
             return [IsAuthenticated()]
         return [AllowAny()]
 
@@ -185,7 +197,17 @@ class PostViewSet(viewsets.ModelViewSet):
     # Aplica os filtros de palavra e categoria apenas à listagem de posts.
     def get_queryset(self):
         queryset = super().get_queryset()
+        user = self.request.user
+        if user.is_authenticated:
+            queryset = queryset.annotate(
+                saved_by_me=Exists(PostFavorite.objects.filter(post_id=OuterRef("pk"), user=user)),
+            )
         if self.action == "list":
+            scope = self.request.query_params.get("lista")
+            if scope in ("minhas", "favoritos"):
+                if not user.is_authenticated:
+                    raise NotAuthenticated()
+                queryset = queryset.filter(user=user) if scope == "minhas" else queryset.filter(saved_by_me=True)
             term = self.request.query_params.get("search", "").strip()
             category = self.request.query_params.get("category", "").strip()
             if category:
@@ -232,6 +254,15 @@ class PostViewSet(viewsets.ModelViewSet):
         return Response(
             {"liked": created, "likes_count": PostLike.objects.filter(post=post).count()}
         )
+
+    @action(detail=True, methods=["put", "delete"])
+    def favorite(self, request, pk=None):
+        post = self.get_object()
+        if request.method == "PUT":
+            PostFavorite.objects.get_or_create(post=post, user=request.user)
+        else:
+            PostFavorite.objects.filter(post=post, user=request.user).delete()
+        return Response({"saved_by_me": request.method == "PUT"})
 
     @action(detail=True, methods=["get", "post"], permission_classes=[IsAuthenticated])
     # Lista os comentários do post ou cria um comentário associado ao autor da requisição.

@@ -6,6 +6,12 @@ export const CLERK_PUBLISHABLE_KEY = new InjectionToken<string>('Clerk publishab
   providedIn: 'root', factory: () => clerkConfig.publishableKey,
 });
 
+interface ClerkAccountDetails {
+  email: string;
+  providers: string[];
+  passwordEnabled: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClerkService {
   private readonly publishableKey = inject(CLERK_PUBLISHABLE_KEY);
@@ -14,6 +20,8 @@ export class ClerkService {
     ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
   );
   readonly signedIn = signal(false);
+  private readonly accountState = signal<ClerkAccountDetails | null>(null);
+  readonly account = this.accountState.asReadonly();
   private instance?: Clerk;
   private initialization?: Promise<void>;
 
@@ -57,8 +65,16 @@ export class ClerkService {
       signUpUrl: new URL('acesso/cadastro', document.baseURI).href,
     });
     this.instance = clerk;
-    this.signedIn.set(!!clerk.session);
-    clerk.addListener(({ session }) => this.signedIn.set(!!session));
+    const updateAccount = (session: typeof clerk.session, user: typeof clerk.user) => {
+      this.signedIn.set(!!session);
+      this.accountState.set(session && user ? {
+        email: user.primaryEmailAddress?.emailAddress || '',
+        providers: [...new Set(user.externalAccounts.map(account => account.providerTitle()))],
+        passwordEnabled: user.passwordEnabled,
+      } : null);
+    };
+    updateAccount(clerk.session, clerk.user);
+    clerk.addListener(({ session, user }) => updateAccount(session, user));
   }
 
   async token(): Promise<string | null> {
@@ -102,6 +118,7 @@ export class ClerkService {
     await this.initialize();
     await this.instance?.signOut();
     this.signedIn.set(false);
+    this.accountState.set(null);
   }
 
   async openUserProfile(): Promise<void> {

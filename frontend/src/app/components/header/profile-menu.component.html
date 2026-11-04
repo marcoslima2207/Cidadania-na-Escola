@@ -1,0 +1,38 @@
+<div class="account" (keydown.escape)="escape($event)">
+  <button #trigger class="profile-trigger" type="button" [attr.aria-expanded]="open()"
+    aria-controls="account-panel" [attr.aria-label]="'Menu da conta: ' + name" (click)="open.set(!open())">
+    <span class="avatar">
+      @for (url of photo ? [photo] : []; track url) {
+        <img #image [src]="url" alt="" (error)="image.hidden = true" />
+      }
+      <span aria-hidden="true">{{ initials }}</span>
+    </span>
+    <strong class="trigger-name">{{ name }}</strong>
+    <app-icon name="chevron-down" />
+  </button>
+  <nav id="account-panel" class="account-panel" aria-label="Opções da conta"
+    [class.open]="open()" [inert]="!open()">
+    <div class="account-summary">
+      <span class="avatar avatar-large">
+        @for (url of photo ? [photo] : []; track url) {
+        <img #image [src]="url" alt="" (error)="image.hidden = true" />
+      }
+        <span aria-hidden="true">{{ initials }}</span>
+      </span>
+      <div><strong>{{ name }}</strong><small>{{ profile()?.email }}</small></div>
+    </div>
+    @if (failed()) {
+      <button type="button" class="account-item" (click)="load()">Tentar carregar o perfil novamente</button>
+    } @else if (!profile()) {
+      <small class="account-status" role="status">Carregando perfil…</small>
+    }
+    @for (link of links; track link.label) {
+      <a class="account-item" [routerLink]="link.path" [queryParams]="link.params" (click)="close()">
+        <app-icon [name]="link.icon" />{{ link.label }}
+      </a>
+    }
+    <button class="account-item logout-button" type="button" [disabled]="loggingOut()" (click)="signOut.emit()">
+      <app-icon name="logout" />{{ loggingOut() ? 'Saindo…' : 'Sair' }}
+    </button>
+  </nav>
+</div>

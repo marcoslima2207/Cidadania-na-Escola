@@ -153,6 +153,7 @@
   }
 
   .header-navigation {
+    order: 3;
     display: none;
     flex-basis: 100%;
     padding-top: var(--ce-space-4);
@@ -223,6 +224,14 @@
   }
 }
 
+@media (max-width: 32rem) {
+  .header-inner { column-gap: .25rem; }
+  .menu-toggle, .account-actions .ce-button { padding-inline: .45rem; }
+  .menu-toggle span { display: none; }
+}
+@media (max-width: 23rem) {
+  .header-inner:has(.account-link) .account-actions { margin-inline-start: auto; margin-block-start: .35rem; }
+}
 @keyframes ce-navigation-in {
   from {
     opacity: 0;

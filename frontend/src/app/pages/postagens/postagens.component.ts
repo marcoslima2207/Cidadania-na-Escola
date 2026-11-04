@@ -2,7 +2,8 @@ import { AuthService } from '../../services/auth.service';
 // Carrega o feed público, filtra assuntos e permite curtir, comentar e excluir posts próprios.
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, OnDestroy, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
@@ -26,6 +27,7 @@ interface Post {
   comments_count: number;
   liked_by_me: boolean;
   is_mine: boolean;
+  saved_by_me?: boolean;
   created_at?: string;
   author_profile?: { avatar_url: string; avatar_choice: string };
 }
@@ -64,6 +66,10 @@ export class PostagensComponent implements OnInit, OnDestroy {
   commentsLoading = false;
   error = '';
   category = '';
+  scope = '';
+  editing: { id: number; title: string; content: string } | null = null;
+  editError = '';
+  private readonly destroyRef = inject(DestroyRef);
   // Identifica posts com uma ação pendente para evitar curtidas ou comentários duplicados.
   busy = new Set<number>();
   categories = postCategories;
@@ -81,7 +87,11 @@ export class PostagensComponent implements OnInit, OnDestroy {
   ) {}
   // Executa a inicialização da página quando o Angular cria o componente.
   ngOnInit(): void {
-    this.load();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      const scope = params.get('lista');
+      this.scope = scope === 'minhas' || scope === 'favoritos' ? scope : '';
+      this.load();
+    });
   }
   setCategory(category: string): void {
     this.category = category;
@@ -93,10 +103,17 @@ export class PostagensComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     this.openPost = null;
+    this.editing = null;
+    if (this.scope) this.posts = [];
+    if (this.scope && !this.loggedIn) {
+      this.loading = false;
+      this.error = 'Entre na sua conta para acessar esta lista.';
+      return;
+    }
     this.http
       .get<Post[]>(`${this.api}/posts/`, {
         headers: this.headers(),
-        params: this.category ? { category: this.category } : {},
+        params: { ...(this.category ? { category: this.category } : {}), ...(this.scope ? { lista: this.scope } : {}) },
       })
       .subscribe({
         next: (posts) => {
@@ -123,6 +140,55 @@ export class PostagensComponent implements OnInit, OnDestroy {
       });
   }
   // Usa o mesmo catálogo de ilustrações apresentado na edição do perfil.
+  editPost(post: Post): void {
+    this.editError = '';
+    this.editing = { id: post.id, title: post.title, content: post.content };
+  }
+
+  savePost(post: Post): void {
+    const draft = this.editing;
+    if (!draft || draft.id !== post.id || !this.isMine(post) || this.busy.has(post.id)) return;
+    this.busy.add(post.id);
+    this.editError = '';
+    this.http.patch<Post>(`${this.api}/posts/${post.id}/`, {
+      title: draft.title, content: draft.content,
+    }, { headers: this.headers() }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: saved => {
+        Object.assign(post, saved);
+        this.busy.delete(post.id);
+        if (this.editing === draft) this.editing = null;
+        this.changeDetector.markForCheck();
+      },
+      error: response => {
+        this.busy.delete(post.id);
+        this.editError = response.error?.title?.[0] || response.error?.content?.[0] ||
+          'Não foi possível salvar a publicação. Tente novamente.';
+        this.changeDetector.markForCheck();
+      },
+    });
+  }
+
+  toggleFavorite(post: Post): void {
+    if (!this.loggedIn || this.busy.has(post.id)) return;
+    const url = `${this.api}/posts/${post.id}/favorite/`;
+    const options = { headers: this.headers() };
+    this.busy.add(post.id);
+    const request = post.saved_by_me
+      ? this.http.delete<{ saved_by_me: boolean }>(url, options)
+      : this.http.put<{ saved_by_me: boolean }>(url, {}, options);
+    request.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: result => {
+        this.busy.delete(post.id);
+        post.saved_by_me = result.saved_by_me;
+        if (this.scope === 'favoritos' && !post.saved_by_me) {
+          this.posts = this.posts.filter(item => item.id !== post.id);
+        }
+        this.changeDetector.markForCheck();
+      },
+      error: error => this.failed(post, error),
+    });
+  }
+
   illustrationImage(choice?: string): string {
     return avatarImage(choice);
   }

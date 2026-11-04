@@ -14,13 +14,14 @@ import { filter } from 'rxjs';
 import { apiConfig } from '../../api-config';
 import { BrandComponent } from '../brand/brand.component';
 import { AuthService } from '../../services/auth.service';
+import { ProfileMenuComponent } from './profile-menu.component';
 import { ClerkService } from '../../services/clerk.service';
 
 // Navegação compartilhada: conserva as rotas e o contrato de sessão existentes.
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, BrandComponent],
+  imports: [RouterLink, RouterLinkActive, BrandComponent, ProfileMenuComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
 })
@@ -109,6 +110,7 @@ export class HeaderComponent {
     this.loggingOut = false;
     this.closeMenu();
     this.changeDetector.markForCheck();
-    this.router.navigate(['/acesso']);
+    this.auth.clearProfile();
+    this.router.navigate(['/']);
   }
 }

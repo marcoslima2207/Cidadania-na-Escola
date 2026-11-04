@@ -72,36 +72,16 @@
           <span class="search-label">Pesquisar assuntos</span>
         </a>
 
-        <div class="account-actions">
-          @if (isLoggedIn) {
-            <a
-              routerLink="/perfil"
-              (click)="closeMenu()"
-              routerLinkActive="is-active"
-              ariaCurrentWhenActive="page"
-              class="account-link ce-button"
-              >Meu perfil</a
-            >
-            <button
-              type="button"
-              class="logout-button ce-button ce-button--secondary"
-              (click)="logout()"
-              [disabled]="loggingOut"
-            >
-              {{ loggingOut ? 'Saindo…' : 'Sair' }}
-            </button>
-          } @else {
-            <a
-              routerLink="/acesso"
-              (click)="closeMenu()"
-              routerLinkActive="is-active"
-              ariaCurrentWhenActive="page"
-              class="account-link ce-button"
-              >Entrar<span class="register-label"> / Criar conta</span></a
-            >
-          }
-        </div>
+
       </div>
+    </div>
+    <div class="account-actions">
+      @if (isLoggedIn) {
+        <app-profile-menu [loggingOut]="loggingOut" (signOut)="logout()" />
+      } @else {
+        <a routerLink="/acesso" class="account-link ce-button" (click)="closeMenu()">Entrar</a>
+        <a routerLink="/acesso/cadastro" class="ce-button ce-button--secondary" (click)="closeMenu()">Cadastrar</a>
+      }
     </div>
   </div>
 </header>

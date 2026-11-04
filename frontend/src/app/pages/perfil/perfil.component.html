@@ -3,11 +3,6 @@
     <p class="ce-eyebrow">Meu espaço na comunidade</p>
     <h1 id="profile-title" class="ce-title">Seu perfil</h1>
     <p class="ce-lead">Personalize como você aparece na comunidade.</p>
-    @if (clerk.enabled && clerk.signedIn()) {
-      <button type="button" class="ce-button ce-button--secondary" (click)="accountSettings()">
-        E-mail e segurança da conta
-      </button>
-    }
   </header>
   @if (loading) {
     <div class="profile-state ce-notice" role="status">
@@ -56,7 +51,13 @@
           [disabled]="saving"
         >
           <app-icon name="upload" /> Alterar foto</button
-        ><small>Escolha uma foto ou uma ilustração que tenha a ver com você.</small>
+        >
+        @if (profile.avatar_file_url || profile.avatar_url || selectedFile) {
+          <button type="button" class="ce-button ce-button--secondary" (click)="removePhoto()" [disabled]="saving">
+            Remover foto
+          </button>
+        }
+        <small>Escolha uma foto ou uma ilustração que tenha a ver com você.</small>
       </aside>
       <div class="profile-form ce-card">
         <div class="ce-field">

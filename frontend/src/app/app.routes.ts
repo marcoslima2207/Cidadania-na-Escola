@@ -47,6 +47,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/acesso/acesso.component').then((m) => m.AcessoComponent),
   },
   {
+    path: 'perfil/configuracoes',
+    loadComponent: () =>
+      import('./pages/configuracoes/configuracoes.component').then((m) => m.ConfiguracoesComponent),
+  },
+  {
     path: 'perfil',
     loadComponent: () => import('./pages/perfil/perfil.component').then((m) => m.PerfilComponent),
   },

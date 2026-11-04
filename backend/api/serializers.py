@@ -1,11 +1,16 @@
 # Valida os dados recebidos pela API e converte registros do banco em respostas JSON.
+from io import BytesIO
 from pathlib import Path
+from uuid import uuid4
+
+from PIL import Image, ImageOps
 
 from django.contrib.auth import authenticate, get_user_model
 from django.db import transaction
+from django.urls import reverse
 from rest_framework import serializers
 
-from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
+from .models import Conteudo, GoogleIdentity, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 from .user_display import user_display_name
 
 User = get_user_model()
@@ -85,6 +90,10 @@ class PostSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     liked_by_me = serializers.SerializerMethodField()
+    saved_by_me = serializers.SerializerMethodField()
+
+    def get_saved_by_me(self, obj):
+        return getattr(obj, "saved_by_me", False)
     # O upload é opcional para permitir posts de texto; a resposta expõe só seu endereço.
     media_file = serializers.FileField(write_only=True, required=False, allow_null=True)
 
@@ -110,6 +119,7 @@ class PostSerializer(serializers.ModelSerializer):
             "likes_count",
             "comments_count",
             "liked_by_me",
+            "saved_by_me",
         ]
 
     # Monta a resposta do post e apresenta o endereço do upload no campo media_url.
@@ -244,6 +254,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source="user.username", read_only=True)
     display_name = serializers.SerializerMethodField()
     email = serializers.EmailField(source="user.email", read_only=True)
+    login_methods = serializers.SerializerMethodField()
     avatar_file = serializers.FileField(write_only=True, required=False, allow_null=True)
     avatar_file_url = serializers.SerializerMethodField()
 
@@ -253,6 +264,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "username",
             "display_name",
             "email",
+            "login_methods",
             "bio",
             "avatar_url",
             "avatar_choice",
@@ -263,12 +275,20 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_display_name(self, obj):
         return user_display_name(obj.user)
 
+    def get_login_methods(self, obj):
+        methods = ["E-mail e senha"] if obj.user.has_usable_password() else []
+        if GoogleIdentity.objects.filter(user_id=obj.user_id).exists():
+            methods.append("Google")
+        return methods
+
     # Devolve o endereço completo do upload para o frontend hospedado em outro domínio.
     def get_avatar_file_url(self, obj):
-        if not obj.avatar_file:
-            return ""
+        url = (
+            reverse("profile-avatar", kwargs={"key": obj.avatar_key})
+            if obj.avatar_key else obj.avatar_file.url if obj.avatar_file else ""
+        )
         request = self.context.get("request")
-        return request.build_absolute_uri(obj.avatar_file.url) if request else obj.avatar_file.url
+        return request.build_absolute_uri(url) if request and url else url
 
     # Aceita apenas imagens de até 5 MB; extensão e assinatura devem corresponder ao MIME.
     def validate_avatar_file(self, value):
@@ -286,28 +306,31 @@ class ProfileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Envie uma foto JPG, JPEG, JFIF, PNG ou WEBP.")
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("A foto deve ter no máximo 5 MB.")
-        header = value.read(12)
-        value.seek(0)
-        valid = {
-            "image/jpeg": header.startswith(b"\xff\xd8\xff"),
-            "image/png": header.startswith(b"\x89PNG\r\n\x1a\n"),
-            "image/webp": header.startswith(b"RIFF") and header[8:12] == b"WEBP",
-        }
-        if not valid[value.content_type]:
-            raise serializers.ValidationError(
-                "O conteúdo do arquivo não corresponde a uma foto válida."
-            )
-        return value
+        try:
+            with Image.open(value) as image:
+                if Image.MIME.get(image.format) != value.content_type or image.width * image.height > 16_000_000:
+                    raise ValueError("Formato ou resolução inválida")
+                image.verify()
+            value.seek(0)
+            with Image.open(value) as image:
+                image = ImageOps.exif_transpose(image)
+                image.thumbnail((512, 512))
+                output = BytesIO()
+                image.convert("RGB").save(output, "WEBP", quality=85)
+                return output.getvalue()
+        except (OSError, ValueError, SyntaxError, Image.DecompressionBombError) as exc:
+            raise serializers.ValidationError("O conteúdo do arquivo não corresponde a uma foto válida de até 16 megapixels.") from exc
 
-    # A escolha mais recente define a aparência: upload, link ou ilustração.
+    # Fotos novas ficam no banco e o endereço muda a cada troca.
     def validate(self, attrs):
-        if attrs.get("avatar_file"):
-            attrs["avatar_url"] = ""
-        elif attrs.get("avatar_url"):
-            attrs["avatar_file"] = None
-        elif "avatar_choice" in attrs:
-            attrs["avatar_file"] = None
-            attrs["avatar_url"] = ""
+        if "avatar_file" in attrs:
+            image = attrs.pop("avatar_file")
+            attrs.update(avatar_image=image, avatar_key=uuid4() if image else None,
+                         avatar_file=None, avatar_url="")
+        elif attrs.get("avatar_url") or "avatar_choice" in attrs:
+            attrs.update(avatar_image=None, avatar_key=None, avatar_file=None)
+            if not attrs.get("avatar_url"):
+                attrs["avatar_url"] = ""
         return attrs
 
     # Remove a foto substituída somente depois de a atualização do banco ser confirmada.

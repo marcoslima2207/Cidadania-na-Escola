@@ -2,11 +2,15 @@
   <header class="posts-head">
     <div>
       <p class="ce-eyebrow">Aprender em comunidade</p>
-      <h1 class="ce-title" id="community-title">Comunidade</h1>
-      <p>Ideias, informação e conversa pública em um só lugar.</p>
+      <h1 class="ce-title" id="community-title">{{ scope === 'minhas' ? 'Meus conteúdos' : scope === 'favoritos' ? 'Favoritos' : 'Comunidade' }}</h1>
+      <p>{{ scope === 'minhas' ? 'Acesse e gerencie suas publicações.' : scope === 'favoritos' ? 'Encontre as publicações que você salvou.' : 'Ideias, informação e conversa pública em um só lugar.' }}</p>
     </div>
     <a routerLink="/publicar" class="ce-button"><app-icon name="plus" /> Publicar</a>
   </header>
+  @if (scope) {
+    <a class="ce-link" routerLink="/postagens">Voltar à comunidade</a>
+    @if (!loggedIn) { <a class="ce-link" routerLink="/acesso">Entrar na conta</a> }
+  }
   <div class="filters" role="group" aria-label="Filtrar publicações por assunto">
     <button class="ce-chip" type="button" [attr.aria-pressed]="!category" (click)="setCategory('')">
       Todos os assuntos
@@ -78,6 +82,8 @@
                 }
               </div>
               @if (isMine(post)) {
+                <button type="button" class="action-button" [disabled]="busy.has(post.id)"
+                  (click)="editPost(post)">Editar</button>
                 <button
                   class="delete-button"
                   type="button"
@@ -127,7 +133,32 @@
                 </div>
               }
             </div>
+            @if (editing; as draft) {
+              @if (draft.id === post.id) {
+                <form class="ce-field" (ngSubmit)="savePost(post)">
+                  <label [for]="'edit-title-' + post.id">Título</label>
+                  <input class="ce-input" [id]="'edit-title-' + post.id" name="title" [(ngModel)]="draft.title" [disabled]="busy.has(post.id)" />
+                  <label [for]="'edit-content-' + post.id">Texto da publicação</label>
+                  <textarea class="ce-input" [id]="'edit-content-' + post.id" name="content" [(ngModel)]="draft.content" [disabled]="busy.has(post.id)"></textarea>
+                  @if (editError) { <p class="ce-notice ce-notice--error" role="alert">{{ editError }}</p> }
+                  <div class="actions">
+                    <button class="ce-button" type="submit" [disabled]="busy.has(post.id)">
+                      {{ busy.has(post.id) ? 'Salvando…' : 'Salvar alterações' }}
+                    </button>
+                    <button class="ce-button ce-button--secondary" type="button" [disabled]="busy.has(post.id)"
+                      (click)="editing = null">Cancelar</button>
+                  </div>
+                </form>
+              }
+            }
             <div class="actions">
+              @if (loggedIn) {
+                <button type="button" class="action-button" (click)="toggleFavorite(post)"
+                  [attr.aria-pressed]="!!post.saved_by_me" [disabled]="busy.has(post.id)">
+                  <app-icon name="bookmark" />
+                  {{ post.saved_by_me ? 'Remover dos favoritos' : 'Salvar' }}
+                </button>
+              }
               <button
                 class="action-button action-button--like"
                 type="button"
@@ -208,14 +239,14 @@
               <app-icon name="people" />
               <h2>
                 {{
-                  category
+                  scope === 'favoritos' ? 'Nenhum favorito nesta lista' : scope === 'minhas' ? 'Nenhuma publicação sua nesta lista' : category
                     ? 'Nenhuma publicação neste assunto'
                     : 'Sua ideia pode começar uma conversa'
                 }}
               </h2>
               <p>
                 {{
-                  category
+                  scope === 'favoritos' ? 'Salve publicações da comunidade para encontrar aqui.' : category
                     ? 'Escolha outro assunto para continuar explorando.'
                     : 'Ainda não há publicações. Seja a primeira pessoa a compartilhar uma ideia.'
                 }}

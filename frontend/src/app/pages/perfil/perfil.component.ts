@@ -1,26 +1,13 @@
-import { AuthService } from '../../services/auth.service';
-import { ClerkService } from '../../services/clerk.service';
+import { AccountProfile, AuthService } from '../../services/auth.service';
 // Perfil autenticado: permite enviar uma foto, manter um link ou escolher uma ilustração.
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectorRef, Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { apiConfig } from '../../api-config';
 import { avatarImage, avatarOptions } from '../../avatar-options';
 import { IconComponent } from '../../components/icon/icon.component';
 import { apiErrorMessage } from '../../services/api-error';
-
-// O upload é recebido pelo campo avatar_file; a consulta retorna seu endereço neste contrato.
-interface Profile {
-  username: string;
-  display_name?: string;
-  email: string;
-  bio: string;
-  avatar_url: string;
-  avatar_choice: string;
-  avatar_file_url: string;
-}
 
 @Component({
   selector: 'app-perfil',
@@ -32,16 +19,9 @@ interface Profile {
   styleUrl: './perfil.component.css',
 })
 export class PerfilComponent implements OnInit, OnDestroy {
-  readonly clerk = inject(ClerkService);
   private readonly auth = inject(AuthService);
-  async accountSettings(): Promise<void> {
-    try { await this.clerk.openUserProfile(); }
-    catch {
-      this.saveError = 'Não foi possível abrir as configurações da conta. Tente novamente.';
-      this.changeDetector.markForCheck();
-    }
-  }
-  profile: Profile | null = null;
+  private readonly destroyRef = inject(DestroyRef);
+  profile: AccountProfile | null = null;
   illustrations = avatarOptions;
   mode: 'upload' | 'url' | 'illustration' = 'illustration';
   message = '';
@@ -53,9 +33,7 @@ export class PerfilComponent implements OnInit, OnDestroy {
   imageError = false;
   selectedFile: File | null = null;
   private previewUrl = '';
-  private readonly api = apiConfig.baseUrl;
   constructor(
-    private http: HttpClient,
     private router: Router,
     private changeDetector: ChangeDetectorRef,
   ) {}
@@ -84,7 +62,7 @@ export class PerfilComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     this.sessionExpired = false;
-    this.http.get<Profile>(`${this.api}/auth/profile/`, { headers: this.headers() }).subscribe({
+    this.auth.loadProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (profile) => {
         this.profile = profile;
         this.mode = profile.avatar_file_url
@@ -161,6 +139,11 @@ export class PerfilComponent implements OnInit, OnDestroy {
     this.imageError = false;
   }
 
+  removePhoto(): void {
+    this.chooseIllustration('portrait01');
+    this.save();
+  }
+
   // Envia somente a origem escolhida para não deixar um upload antigo ocultando a ilustração.
   save(): void {
     if (!this.profile || this.saving) return;
@@ -183,8 +166,8 @@ export class PerfilComponent implements OnInit, OnDestroy {
       payload.append('avatar_url', this.profile.avatar_url.trim());
     } else payload.append('avatar_choice', this.profile.avatar_choice);
     this.saving = true;
-    this.http
-      .patch<Profile>(`${this.api}/auth/profile/`, payload, { headers: this.headers() })
+    this.auth.saveProfile(payload)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (profile) => {
           this.profile = profile;
@@ -209,8 +192,5 @@ export class PerfilComponent implements OnInit, OnDestroy {
   // Abre a tela de acesso e monta a identificação da sessão nas chamadas à API.
   goToLogin(): void {
     this.router.navigate(['/acesso']);
-  }
-  private headers(): HttpHeaders {
-    return this.auth.headers;
   }
 }
