@@ -44,18 +44,11 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      # Somente a chave pública de produção entra no frontend compilado.
-      - name: Configure Clerk production
-        if: ${{ vars.CLERK_PUBLISHABLE_KEY != '' }}
-        working-directory: frontend
-        env:
-          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
-        run: node scripts/configure-clerk.mjs --production
-
       # O Pages informa /repositorio no github.io e a raiz no domínio próprio.
       - name: Build Angular app
         working-directory: frontend
         env:
+          CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: npm run build -- --base-href "${PAGES_BASE_PATH%/}/"
 

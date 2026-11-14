@@ -31,10 +31,17 @@
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "fonts": false
+              },
               "fileReplacements": [
                 {
                   "replace": "src/app/api-config.ts",
                   "with": "src/app/api-config.prod.ts"
+                },
+                {
+                  "replace": "src/app/clerk-config.ts",
+                  "with": "src/app/clerk-config.prod.ts"
                 }
               ],
               "budgets": [
