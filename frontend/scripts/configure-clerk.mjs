@@ -3,7 +3,8 @@ import { writeFile } from 'node:fs/promises';
 // O Node injeta as variáveis; somente a chave pública é serializada no frontend.
 const production = process.argv.includes('--production');
 const prefix = production ? 'pk_live_' : 'pk_test_';
-const key = process.env.CLERK_PUBLISHABLE_KEY?.trim();
+const publicProductionKey = 'pk_live_Y2xlcmsuY2lkYWRhbmlhbmFlc2NvbGEuY29tJA';
+const key = process.env.CLERK_PUBLISHABLE_KEY?.trim() || (production && process.argv.includes('--optional') ? publicProductionKey : '');
 const optional = production && process.argv.includes('--optional');
 if ((!optional || key) && !key?.startsWith(prefix)) {
   throw new Error(`Configure uma chave pública ${production ? 'de produção pk_live_' : 'de desenvolvimento pk_test_'}.`);
