@@ -134,6 +134,31 @@ MEDIA_URL = '/media/'
 # Permite apontar os uploads para um volume persistente no serviço de produção.
 MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
+# Mantém uploads fora do disco temporário do servidor em produção.
+if os.getenv('MEDIA_S3_BUCKET'):
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'bucket_name': os.environ['MEDIA_S3_BUCKET'],
+                'endpoint_url': os.environ['MEDIA_S3_ENDPOINT'],
+                'region_name': os.environ['MEDIA_S3_REGION'],
+                'access_key': os.environ['MEDIA_S3_ACCESS_KEY'],
+                'secret_key': os.environ['MEDIA_S3_SECRET_KEY'],
+                'addressing_style': 'path',
+                'signature_version': 's3v4',
+                'default_acl': None,
+                'file_overwrite': False,
+                'querystring_auth': True,
+                'querystring_expire': 3600,
+                'max_memory_size': 2 * 1024 * 1024,
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+    }
+
 REST_FRAMEWORK = {
     # Primeiro aceita Authorization: Token; também permite sessões Django autenticadas.
     'DEFAULT_AUTHENTICATION_CLASSES': [

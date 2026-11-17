@@ -11,3 +11,4 @@ psycopg[binary]>=3.2,<4
 google-auth[requests]>=2.40,<3
 PyJWT[crypto]>=2.10,<3
 Pillow>=12,<13
+django-storages[s3]>=1.14.6,<2

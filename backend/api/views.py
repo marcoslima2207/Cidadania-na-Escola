@@ -5,8 +5,9 @@ import unicodedata
 from pathlib import Path
 
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage, default_storage
 from django.db.models import Exists, OuterRef
-from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -69,7 +70,14 @@ def serve_uploaded_media(request, path):
     # Resolve o caminho completo antes de abrir o arquivo para bloquear saída da pasta de mídia.
     media_root = Path(settings.MEDIA_ROOT).resolve()
     requested_file = (media_root / path).resolve()
-    if media_root not in requested_file.parents or not requested_file.is_file():
+    if media_root not in requested_file.parents:
+        raise Http404
+    if not requested_file.is_file():
+        # Links antigos continuam funcionando depois da migração dos arquivos.
+        if not isinstance(default_storage, FileSystemStorage) and default_storage.exists(path):
+            response = HttpResponseRedirect(default_storage.url(path))
+            response['Cache-Control'] = 'no-store'
+            return response
         raise Http404
     size = requested_file.stat().st_size
     # Navegadores usam Range para carregar partes do vídeo e avançar na reprodução.

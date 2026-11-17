@@ -2,7 +2,9 @@
 from django.contrib.auth import get_user_model
 import base64
 import tempfile
+from unittest.mock import patch
 from io import BytesIO
+from pathlib import Path
 from PIL import Image
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -321,6 +323,41 @@ class ApiEndpointsTests(APITestCase):
         invalid = self.client.get(reverse('uploaded-media', args=[post.media_file.name]), HTTP_RANGE='bytes=999-')
         self.assertEqual(invalid.status_code, 416)
         self.assertEqual(self.client.get('/media/../config/settings.py').status_code, 404)
+
+    @override_settings(STORAGES={
+        'default': {'BACKEND': 'django.core.files.storage.InMemoryStorage'},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    })
+    def test_post_upload_uses_configured_storage_without_local_media(self):
+        self.client.force_authenticate(self.user)
+        response = self.client.post(
+            reverse('post-list'),
+            {'category': 'Cidadania', 'media_file': self.avatar_upload()},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        post = Post.objects.get(pk=response.data['id'])
+        self.assertTrue(post.media_file.storage.exists(post.media_file.name))
+        self.assertFalse((Path(self.media_dir.name) / post.media_file.name).exists())
+        self.client.force_authenticate(None)
+        posts = self.client.get(reverse('post-list')).data
+        self.assertEqual(posts[0]['media_url'], response.data['media_url'])
+
+    @patch('api.views.default_storage')
+    def test_old_media_link_redirects_to_persistent_storage(self, storage):
+        storage.exists.return_value = True
+        storage.url.return_value = 'https://storage.example.com/signed-image'
+        path = 'posts/2026/11/antiga.jpg'
+        response = self.client.get(reverse('uploaded-media', args=[path]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], storage.url.return_value)
+        self.assertEqual(response['Cache-Control'], 'no-store')
+        storage.exists.assert_called_once_with(path)
+        storage.exists.return_value = False
+        self.assertEqual(self.client.get(reverse('uploaded-media', args=[path])).status_code, 404)
+        storage.exists.reset_mock()
+        self.assertEqual(self.client.get('/media/../config/settings.py').status_code, 404)
+        storage.exists.assert_not_called()
 
     # Confere a compatibilidade das publicações antigas que usam uma URL externa.
     def test_external_media_link_is_preserved(self):
