@@ -136,6 +136,8 @@ MEDIA_ROOT = Path(os.getenv('MEDIA_ROOT', str(BASE_DIR / 'media')))
 
 # Mantém uploads fora do disco temporário do servidor em produção.
 if os.getenv('MEDIA_S3_BUCKET'):
+    from botocore.config import Config
+
     STORAGES = {
         'default': {
             'BACKEND': 'storages.backends.s3.S3Storage',
@@ -147,6 +149,12 @@ if os.getenv('MEDIA_S3_BUCKET'):
                 'secret_key': os.environ['MEDIA_S3_SECRET_KEY'],
                 'addressing_style': 'path',
                 'signature_version': 's3v4',
+                'client_config': Config(
+                    signature_version='s3v4',
+                    s3={'addressing_style': 'path'},
+                    request_checksum_calculation='when_required',
+                    response_checksum_validation='when_required',
+                ),
                 'default_acl': None,
                 'file_overwrite': False,
                 'querystring_auth': True,

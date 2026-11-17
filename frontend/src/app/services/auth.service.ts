@@ -49,7 +49,9 @@ export class AuthService {
 
   get headers(): HttpHeaders {
     // O interceptor obtém um JWT atualizado antes de cada chamada.
-    if (this.clerk.enabled) return new HttpHeaders({ Authorization: 'Bearer' });
+    if (this.clerk.enabled) {
+      return new HttpHeaders(this.clerk.signedIn() ? { Authorization: 'Bearer' } : {});
+    }
     const token = localStorage.getItem('cidadania_token');
     return new HttpHeaders(token ? { Authorization: `Token ${token}` } : {});
   }
