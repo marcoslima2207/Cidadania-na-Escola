@@ -41,7 +41,6 @@ export class HeaderComponent {
     { label: 'Quiz', path: '/quiz' },
     { label: 'Sobre', path: '/sobre' },
     { label: 'Comunidade', path: '/postagens' },
-    { label: 'Publicar', path: '/publicar' },
   ];
 
   menuOpen = false;
