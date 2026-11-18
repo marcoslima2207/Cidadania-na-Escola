@@ -10,7 +10,7 @@ from django.db import transaction
 from django.urls import reverse
 from rest_framework import serializers
 
-from .models import Conteudo, GoogleIdentity, Pergunta, Post, PostComment, Profile, Resultado, Usuario
+from .models import Conteudo, GoogleIdentity, MaterialEducativo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 from .user_display import user_display_name
 
 User = get_user_model()
@@ -358,6 +358,12 @@ class PostCommentSerializer(serializers.ModelSerializer):
 
 
 # CONTEÚDO EDUCATIVO.
+class MaterialEducativoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaterialEducativo
+        fields = ['id', 'titulo', 'resumo', 'categoria', 'fonte', 'url', 'formato', 'conferido_em']
+
+
 class ConteudoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conteudo

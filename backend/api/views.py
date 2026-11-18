@@ -19,6 +19,7 @@ from .google_auth import GoogleCredentialSerializer, google_config
 from .user_display import user_display_name
 from .models import (
     Conteudo,
+    MaterialEducativo,
     Pergunta,
     Post,
     PostLike,
@@ -29,6 +30,7 @@ from .models import (
 )
 from .serializers import (
     ConteudoSerializer,
+    MaterialEducativoSerializer,
     LoginSerializer,
     PerguntaSerializer,
     PostCommentSerializer,
@@ -289,6 +291,19 @@ class PostViewSet(viewsets.ModelViewSet):
 
 
 # CONTEÚDO EDUCATIVO.
+class MaterialEducativoViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = MaterialEducativo.objects.all()
+    serializer_class = MaterialEducativoSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        categoria = self.request.query_params.get('categoria', '').strip()
+        if categoria:
+            queryset = queryset.filter(categoria=categoria)
+        return queryset
+
+
 class ConteudoViewSet(viewsets.ModelViewSet):
     queryset = Conteudo.objects.all().order_by("-data_publicacao")
     serializer_class = ConteudoSerializer

@@ -1,0 +1,48 @@
+<section class="library" aria-labelledby="library-heading" [attr.aria-busy]="loading()">
+  <header class="library__header">
+    <div>
+      <h2 id="library-heading">Materiais para aprofundar</h2>
+      <p>Livros, atividades e ferramentas de instituições e organizações de referência.</p>
+    </div>
+    <span class="library__icon"><app-icon name="book" /></span>
+  </header>
+
+  @if (loading()) {
+    <p class="library__status" role="status">Carregando os materiais…</p>
+  } @else if (error()) {
+    <div class="library__status" role="alert">
+      <p>Não foi possível carregar os materiais. Tente novamente.</p>
+      <button type="button" class="ce-button ce-button--secondary" (click)="load()">
+        Tentar novamente
+      </button>
+    </div>
+  } @else {
+    <div class="library__grid">
+      @for (material of materials(); track material.id) {
+        <article class="material">
+          <div class="material__metadata">
+            <span class="material__format">{{ material.formato }}</span>
+            <span>{{ material.fonte }}</span>
+          </div>
+          <h3>{{ material.titulo }}</h3>
+          <p class="material__summary">{{ material.resumo }}</p>
+          <footer>
+            <p class="material__date">
+              Link conferido em {{ material.conferido_em | date: 'dd/MM/yyyy' }}
+            </p>
+            <a
+              [href]="material.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              [attr.aria-label]="'Abrir ' + material.titulo + ' na fonte original, em nova aba'"
+            >
+              Abrir na fonte <app-icon name="arrow" />
+            </a>
+          </footer>
+        </article>
+      } @empty {
+        <p class="library__status">Os materiais deste tema serão publicados em breve.</p>
+      }
+    </div>
+  }
+</section>

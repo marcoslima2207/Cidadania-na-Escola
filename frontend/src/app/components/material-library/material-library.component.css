@@ -1,0 +1,112 @@
+:host {
+  display: block;
+}
+.library {
+  margin-top: var(--ce-space-10);
+}
+.library__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.library__header h2 {
+  margin: 0;
+  color: var(--ce-color-blue);
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  letter-spacing: -0.03em;
+}
+.library__header p {
+  margin: 0.65rem 0 0;
+  color: var(--ce-color-text-muted);
+  line-height: 1.7;
+}
+.library__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--ce-color-green-soft);
+  color: var(--ce-color-green-ink);
+  font-size: 1.5rem;
+}
+.library__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ce-grid-gap);
+}
+.material {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--ce-color-border);
+  border-radius: var(--ce-radius-card);
+  background: white;
+}
+.material__metadata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  color: var(--ce-color-text-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+.material__format {
+  padding: 0.2rem 0.65rem;
+  border-radius: 2rem;
+  background: var(--ce-color-blue-soft);
+  color: var(--ce-color-blue);
+  font-weight: 700;
+}
+.material h3 {
+  margin: 1rem 0 0.75rem;
+  color: var(--ce-color-blue);
+  font-size: 1.1rem;
+  line-height: 1.45;
+}
+.material__summary {
+  margin: 0 0 1.25rem;
+  color: var(--ce-color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+.material footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ce-color-border);
+}
+.material__date {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  color: var(--ce-color-text-muted);
+}
+.material a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--ce-color-blue);
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-decoration: none;
+  padding: 0.4rem 0;
+}
+.material a:hover {
+  text-decoration: underline;
+}
+.library__status {
+  padding: 1.5rem;
+  border: 1px solid var(--ce-color-border);
+  border-radius: var(--ce-radius-card);
+  color: var(--ce-color-text-muted);
+}
+@media (max-width: 64rem) {
+  .library__grid {
+    grid-template-columns: 1fr;
+  }
+}

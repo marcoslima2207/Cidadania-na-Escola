@@ -2,12 +2,13 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IconComponent } from '../../components/icon/icon.component';
+import { MaterialLibraryComponent } from '../../components/material-library/material-library.component';
 
 // CONTEUDO: pagina educativa sobre direitos trabalhistas.
 @Component({
   selector: 'app-direitos-trabalhistas',
   standalone: true,
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, IconComponent, MaterialLibraryComponent],
   // HTML da página: liga campos, eventos e condições ao estado do componente.
   templateUrl: './direitos-trabalhistas.component.html',
   // CSS local do componente: define aparência, espaçamento e adaptação às telas menores.

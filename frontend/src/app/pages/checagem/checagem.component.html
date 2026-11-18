@@ -31,6 +31,36 @@
       </p>
     </article>
   </div>
+  <section class="fact-search" aria-labelledby="fact-search-heading">
+    <h2 id="fact-search-heading">Pesquise checagens publicadas</h2>
+    <p>
+      Busque uma afirmação ou assunto no Google Fact Check Explorer. Os resultados abrem em uma nova
+      aba.
+    </p>
+    <form
+      action="https://toolbox.google.com/factcheck/explorer"
+      method="get"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <label for="fact-query">Qual informação você quer conferir?</label>
+      <div class="fact-search__controls">
+        <input
+          id="fact-query"
+          name="q"
+          type="search"
+          required
+          maxlength="200"
+          placeholder="Ex. vacina contra dengue"
+        />
+        <input name="hl" type="hidden" value="pt" />
+        <button type="submit" class="ce-button">
+          Pesquisar checagens <app-icon name="search" />
+        </button>
+      </div>
+    </form>
+  </section>
+  <app-material-library category="checagem" />
   <section class="education-next">
     <div>
       <h2>Transforme conhecimento em prática</h2>

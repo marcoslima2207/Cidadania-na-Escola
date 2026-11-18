@@ -145,6 +145,23 @@ class Conteudo(models.Model):
         return self.titulo
 
 
+# BIBLIOTECA: materiais selecionados, com fonte e acesso ao documento original.
+class MaterialEducativo(models.Model):
+    titulo = models.CharField(max_length=200)
+    resumo = models.TextField()
+    categoria = models.CharField(max_length=30, choices=Conteudo.CATEGORIAS)
+    fonte = models.CharField(max_length=160)
+    url = models.URLField(max_length=600, unique=True)
+    formato = models.CharField(max_length=30)
+    conferido_em = models.DateField()
+
+    class Meta:
+        ordering = ['categoria', 'id']
+
+    def __str__(self):
+        return self.titulo
+
+
 # QUIZ: perguntas de múltipla escolha usadas pela API.
 class Pergunta(models.Model):
     CATEGORIAS = Conteudo.CATEGORIAS + [("cidadania", "Cidadania"), ("educacao", "Educação")]

@@ -113,6 +113,44 @@
 .education-next .ce-button {
   flex-shrink: 0;
 }
+.fact-search {
+  margin-top: var(--ce-space-8);
+  padding: var(--ce-space-8);
+  border: 1px solid var(--ce-color-border);
+  border-radius: var(--ce-radius-card);
+  background: var(--ce-color-blue-soft);
+}
+.fact-search h2 {
+  margin: 0;
+  color: var(--ce-color-blue);
+  font-size: 1.5rem;
+}
+.fact-search p {
+  color: var(--ce-color-text-muted);
+  line-height: 1.7;
+}
+.fact-search label {
+  display: block;
+  margin-bottom: 0.65rem;
+  color: var(--ce-color-blue);
+  font-weight: 700;
+}
+.fact-search__controls {
+  display: flex;
+  gap: 0.75rem;
+}
+.fact-search input[type='search'] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--ce-color-border);
+  border-radius: var(--ce-radius-medium);
+  background: white;
+  font: inherit;
+}
+.fact-search button {
+  flex-shrink: 0;
+}
 @media (max-width: 64rem) {
   .page__header {
     padding: var(--ce-space-8);
@@ -127,6 +165,12 @@
   }
 }
 @media (max-width: 40rem) {
+  .fact-search {
+    padding: var(--ce-space-6);
+  }
+  .fact-search__controls {
+    flex-direction: column;
+  }
   .education-page {
     padding-top: var(--ce-space-4);
   }

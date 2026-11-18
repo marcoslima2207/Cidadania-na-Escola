@@ -6,6 +6,7 @@ from .quiz_views import NivelViewSet, QuizViewSet, TemaViewSet, TentativaViewSet
 from .views import (
     AuthViewSet,
     ConteudoViewSet,
+    MaterialEducativoViewSet,
     PerguntaViewSet,
     PostViewSet,
     ResultadoViewSet,
@@ -17,6 +18,7 @@ router = DefaultRouter()
 # ROTAS DA API: o router gera listagem, detalhe e ações customizadas.
 router.register(r"auth", AuthViewSet, basename="auth")
 router.register(r"conteudos", ConteudoViewSet, basename="conteudo")
+router.register(r"materiais", MaterialEducativoViewSet, basename="material")
 router.register(r"perguntas", PerguntaViewSet, basename="pergunta")
 router.register(r"resultados", ResultadoViewSet, basename="resultado")
 router.register(r"usuarios", UsuarioViewSet, basename="usuario")
