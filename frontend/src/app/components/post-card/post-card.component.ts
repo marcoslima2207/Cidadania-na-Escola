@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, input, signal } from '@angular/core';
+import { Component, computed, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommunityPost } from '../../services/posts.service';
 import { IconComponent } from '../icon/icon.component';
@@ -11,6 +11,10 @@ import { IconComponent } from '../icon/icon.component';
   template: `<a
     class="content-card"
     [class.is-compact]="compact()"
+    [class.is-image-only]="imageOnly()"
+    [attr.aria-label]="
+      imageOnly() ? 'Abrir foto da categoria ' + post().category + ' na comunidade' : null
+    "
     routerLink="/postagens"
     [queryParams]="{ post: post().id }"
   >
@@ -24,30 +28,32 @@ import { IconComponent } from '../icon/icon.component';
         <app-icon [name]="post().media_type === 'video' ? 'play' : 'book'" />
       }
     </div>
-    <div class="content-body">
-      <div class="content-meta">
-        <span
-          class="ce-badge"
-          [class.ce-badge--green]="
-            post().category === 'Democracia' || post().category === 'Cidadania'
-          "
-          [class.ce-badge--yellow]="post().category === 'Direitos Trabalhistas'"
-          >{{ post().category }}</span
-        >
-        @if (post().created_at) {
-          <time [attr.datetime]="post().created_at">{{
-            post().created_at | date: 'dd/MM/yyyy'
-          }}</time>
+    @if (!imageOnly()) {
+      <div class="content-body">
+        <div class="content-meta">
+          <span
+            class="ce-badge"
+            [class.ce-badge--green]="
+              post().category === 'Democracia' || post().category === 'Cidadania'
+            "
+            [class.ce-badge--yellow]="post().category === 'Direitos Trabalhistas'"
+            >{{ post().category }}</span
+          >
+          @if (post().created_at) {
+            <time [attr.datetime]="post().created_at">{{
+              post().created_at | date: 'dd/MM/yyyy'
+            }}</time>
+          }
+        </div>
+        @if (post().title) {
+          <h3>{{ post().title }}</h3>
         }
+        @if (post().content) {
+          <p>{{ post().content }}</p>
+        }
+        <span class="content-link">Acessar conteúdo <app-icon name="arrow" /></span>
       </div>
-      @if (post().title) {
-        <h3>{{ post().title }}</h3>
-      }
-      @if (post().content) {
-        <p>{{ post().content }}</p>
-      }
-      <span class="content-link">Acessar conteúdo <app-icon name="arrow" /></span>
-    </div>
+    }
   </a>`,
   styleUrl: './post-card.component.css',
 })
@@ -55,4 +61,13 @@ export class PostCardComponent {
   readonly post = input.required<CommunityPost>();
   readonly compact = input(false);
   readonly imageFailed = signal(false);
+  readonly imageOnly = computed(
+    () =>
+      !this.compact() &&
+      this.post().media_type === 'image' &&
+      !!this.post().media_url &&
+      !this.post().title?.trim() &&
+      !this.post().content?.trim() &&
+      !this.imageFailed(),
+  );
 }

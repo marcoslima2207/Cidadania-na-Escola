@@ -36,6 +36,19 @@
 .content-card:hover img {
   transform: scale(1.025);
 }
+.content-card.is-image-only {
+  height: auto;
+}
+.is-image-only .content-image {
+  aspect-ratio: auto;
+  background: transparent;
+}
+.is-image-only .content-image img {
+  display: block;
+  height: auto;
+  object-fit: contain;
+  transform: none;
+}
 .content-image.is-fallback {
   display: grid;
   place-items: center;
