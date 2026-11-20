@@ -96,22 +96,6 @@
               }
             </header>
             <div class="post-content" [class.has-media]="post.media_url">
-              <div class="post-copy">
-                <span
-                  class="ce-badge"
-                  [class.ce-badge--green]="
-                    post.category === 'Democracia' || post.category === 'Cidadania'
-                  "
-                  [class.ce-badge--yellow]="post.category === 'Direitos Trabalhistas'"
-                  >{{ post.category }}</span
-                >
-                @if (post.title) {
-                  <h2>{{ post.title }}</h2>
-                }
-                @if (post.content) {
-                  <p>{{ post.content }}</p>
-                }
-              </div>
               @if (post.media_url) {
                 <div class="post-media">
                   @if (post.media_type === 'image') {
@@ -132,6 +116,22 @@
                   }
                 </div>
               }
+              <div class="post-copy">
+                <span
+                  class="ce-badge"
+                  [class.ce-badge--green]="
+                    post.category === 'Democracia' || post.category === 'Cidadania'
+                  "
+                  [class.ce-badge--yellow]="post.category === 'Direitos Trabalhistas'"
+                  >{{ post.category }}</span
+                >
+                @if (post.title) {
+                  <h2>{{ post.title }}</h2>
+                }
+                @if (post.content) {
+                  <p>{{ post.content }}</p>
+                }
+              </div>
             </div>
             @if (editing; as draft) {
               @if (draft.id === post.id) {

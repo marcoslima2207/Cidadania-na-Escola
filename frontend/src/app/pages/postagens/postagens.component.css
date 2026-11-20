@@ -121,7 +121,7 @@
 }
 .post-content.has-media {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--ce-space-5);
 }
 .post-copy {
@@ -146,7 +146,7 @@
   line-height: 1.8;
 }
 .post-media {
-  align-self: center;
+  min-width: 0;
   overflow: hidden;
   border-radius: var(--ce-radius-medium);
   background: var(--ce-color-blue-soft);
@@ -154,7 +154,8 @@
 .media {
   display: block;
   width: 100%;
-  max-height: 360px;
+  height: auto;
+  max-height: 42rem;
   object-fit: contain;
 }
 .actions {
@@ -325,9 +326,6 @@
   .community-sidebar {
     display: none;
   }
-  .post-content.has-media {
-    grid-template-columns: minmax(0, 1fr) 230px;
-  }
 }
 @media (max-width: 40rem) {
   .posts-page {
@@ -348,12 +346,6 @@
   }
   .post {
     padding: var(--ce-space-4);
-  }
-  .post-content.has-media {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .post-media {
-    margin-top: var(--ce-space-2);
   }
   .actions {
     gap: var(--ce-space-2);
