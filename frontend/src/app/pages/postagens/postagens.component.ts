@@ -16,6 +16,7 @@ import { PostsService } from '../../services/posts.service';
 // Define o formato dos dados de Post para conferir os tipos usados pela interface.
 interface Post {
   id: number;
+  author_id?: number;
   author: string;
   author_display_name?: string;
   title: string;
@@ -34,6 +35,7 @@ interface Post {
 // Define o formato dos dados de Comment para conferir os tipos usados pela interface.
 interface Comment {
   id: number;
+  author_id?: number;
   is_mine: boolean;
   author: string;
   author_display_name?: string;

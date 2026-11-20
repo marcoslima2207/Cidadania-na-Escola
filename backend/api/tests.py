@@ -247,6 +247,47 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(like_response.status_code, status.HTTP_200_OK)
         self.assertEqual(comment_response.status_code, status.HTTP_201_CREATED)
 
+    def test_public_profile_exposes_only_public_fields_and_authors_posts(self):
+        other = User.objects.create_user(username='outra', email='privado@example.com', first_name='Outra', last_name='Pessoa')
+        profile, _ = Profile.objects.get_or_create(user=other)
+        profile.bio = 'Aprendendo cidadania'
+        profile.save()
+        post = Post.objects.create(user=other, title='Público', content='Texto', category='Cidadania')
+        Post.objects.create(user=self.user, title='Outro autor', content='Texto', category='Cidadania')
+        comment = PostComment.objects.create(user=other, post=post, content='Comentário')
+        response = self.client.get(reverse('public-profile-detail', args=[other.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(set(response.data), {'id', 'display_name', 'bio', 'avatar_url', 'avatar_choice', 'posts_count'})
+        self.assertEqual(response.data['display_name'], 'Outra Pessoa')
+        self.assertEqual(response.data['bio'], profile.bio)
+        self.assertEqual(response.data['posts_count'], 1)
+        feed = self.client.get(reverse('post-list'), {'author': other.id})
+        self.assertEqual([item['id'] for item in feed.data], [post.id])
+        self.assertEqual(feed.data[0]['author_id'], other.id)
+        comments = self.client.get(reverse('post-comments', args=[post.id]))
+        self.assertEqual(comments.data[0]['author_id'], comment.user_id)
+        self.assertEqual(self.client.get(reverse('post-list'), {'author': 'invalid'}).data, [])
+        self.client.force_authenticate(self.user)
+        self.assertEqual(self.client.patch(reverse('public-profile-detail', args=[other.id]), {'bio': 'Alterada'}, format='json').status_code, 405)
+        self.assertEqual(self.client.delete(reverse('public-profile-detail', args=[other.id])).status_code, 405)
+        profile.refresh_from_db()
+        self.assertEqual(profile.bio, 'Aprendendo cidadania')
+
+    def test_public_profile_handles_missing_profile_and_inactive_accounts(self):
+        other = User.objects.create_user(username='semperfil')
+        Profile.objects.filter(user=other).delete()
+        url = reverse('public-profile-detail', args=[other.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['bio'], '')
+        self.assertEqual(response.data['avatar_choice'], 'portrait01')
+        self.assertEqual(response.data['posts_count'], 0)
+        self.assertFalse(Profile.objects.filter(user=other).exists())
+        other.is_active = False
+        other.save()
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.get(reverse('public-profile-detail', args=[999999])).status_code, 404)
+
     def test_comment_owner_can_edit_and_delete_without_changing_authorship(self):
         other = User.objects.create_user(username='comentador')
         post = Post.objects.create(user=other, title='Discussão', category='Cidadania', content='Texto')

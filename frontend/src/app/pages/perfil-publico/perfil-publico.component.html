@@ -1,0 +1,71 @@
+<section class="public-profile ce-container" aria-labelledby="profile-title">
+  <a class="ce-link" routerLink="/postagens">Voltar à comunidade</a>
+  @if (loading) {
+    <h1 id="profile-title" class="ce-title">Perfil público</h1>
+    <p role="status">Carregando perfil…</p>
+  } @else if (profile; as person) {
+    <header class="profile-card ce-card">
+      <img
+        class="profile-avatar"
+        [src]="avatar"
+        [alt]="'Foto de ' + person.display_name"
+        width="112"
+        height="112"
+        (error)="imageError = true"
+      />
+      <div>
+        <p class="ce-eyebrow">Na comunidade</p>
+        <h1 id="profile-title" class="ce-title">{{ person.display_name }}</h1>
+        @if (person.bio) {
+          <p class="bio">{{ person.bio }}</p>
+        }
+        <p class="post-count">
+          {{ person.posts_count }} {{ person.posts_count === 1 ? 'publicação' : 'publicações' }}
+        </p>
+      </div>
+    </header>
+    <h2>Publicações de {{ person.display_name }}</h2>
+    <div class="profile-posts">
+      @for (post of posts; track post.id) {
+        <article class="profile-post ce-card">
+          <div class="post-meta">
+            <span class="ce-chip">{{ post.category }}</span
+            ><time [attr.datetime]="post.created_at">{{
+              post.created_at | date: 'dd/MM/yyyy'
+            }}</time>
+          </div>
+          @if (post.media_url) {
+            @if (post.media_type === 'video') {
+              <video
+                [src]="post.media_url"
+                controls
+                preload="metadata"
+                aria-label="Vídeo da publicação"
+              ></video>
+            } @else {
+              <img
+                [src]="post.media_url"
+                [alt]="post.title || 'Foto publicada na comunidade'"
+                loading="lazy"
+              />
+            }
+          }
+          @if (post.title) {
+            <h3>{{ post.title }}</h3>
+          }
+          @if (post.content) {
+            <p class="post-text">{{ post.content }}</p>
+          }
+          <a class="ce-link" routerLink="/postagens" [queryParams]="{ post: post.id }"
+            >Ver publicação e comentários</a
+          >
+        </article>
+      } @empty {
+        <p class="ce-card empty">Esta pessoa ainda não publicou na comunidade.</p>
+      }
+    </div>
+  } @else {
+    <h1 id="profile-title" class="ce-title">Perfil público</h1>
+    <p class="ce-notice ce-notice--error" role="alert">{{ error }}</p>
+  }
+</section>

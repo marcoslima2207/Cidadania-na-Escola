@@ -82,6 +82,7 @@ class RegisterSerializer(serializers.Serializer):
 
 # POSTAGENS: normaliza autor, perfil, likes e comentários para o frontend.
 class PostSerializer(serializers.ModelSerializer):
+    author_id = serializers.IntegerField(source="user_id", read_only=True)
     # Campos calculados complementam os campos do modelo sem aceitar valores do cliente.
     author = serializers.SerializerMethodField()
     author_display_name = serializers.SerializerMethodField()
@@ -113,6 +114,7 @@ class PostSerializer(serializers.ModelSerializer):
             "media_file",
             "created_at",
             "author",
+            "author_id",
             "author_display_name",
             "author_profile",
             "is_mine",
@@ -343,7 +345,35 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 # COMENTÁRIOS: impede que autor e postagem sejam falsificados no payload.
+class PublicProfileSerializer(serializers.ModelSerializer):
+    display_name = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+    avatar_choice = serializers.SerializerMethodField()
+    posts_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["id", "display_name", "bio", "avatar_url", "avatar_choice", "posts_count"]
+
+    def get_display_name(self, obj):
+        return user_display_name(obj)
+
+    def get_bio(self, obj):
+        return getattr(getattr(obj, "profile", None), "bio", "")
+
+    def get_avatar_choice(self, obj):
+        return getattr(getattr(obj, "profile", None), "avatar_choice", "portrait01")
+
+    def get_avatar_url(self, obj):
+        profile = getattr(obj, "profile", None)
+        if not profile:
+            return ""
+        return ProfileSerializer(profile, context=self.context).get_avatar_file_url(profile) or profile.avatar_url
+
+
 class PostCommentSerializer(serializers.ModelSerializer):
+    author_id = serializers.IntegerField(source="user_id", read_only=True)
     # A view define o autor a partir da sessão e o post a partir da URL.
     author = serializers.CharField(source="user.username", read_only=True)
     author_display_name = serializers.SerializerMethodField()
@@ -351,7 +381,7 @@ class PostCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PostComment
-        fields = ["id", "post", "content", "author", "author_display_name", "created_at", "is_mine"]
+        fields = ["id", "post", "content", "author", "author_id", "author_display_name", "created_at", "is_mine"]
         read_only_fields = ["post"]
 
     def get_author_display_name(self, obj):

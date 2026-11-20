@@ -53,7 +53,7 @@
         @for (post of posts; track post.id) {
           <article class="post ce-card" [attr.id]="'post-' + post.id">
             <header class="post-top">
-              <div class="avatar">
+              <a class="avatar" [routerLink]="post.author_id ? ['/perfil', post.author_id] : null" [attr.aria-label]="'Ver perfil de ' + (post.author_display_name || post.author)">
                 <img
                   [src]="
                     post.author_profile?.avatar_url ||
@@ -72,9 +72,9 @@
                   height="48"
                   loading="lazy"
                 />
-              </div>
+              </a>
               <div class="author-meta">
-                <strong>{{ post.author_display_name || post.author }}</strong>
+                <a class="author-link" [routerLink]="post.author_id ? ['/perfil', post.author_id] : null"><strong>{{ post.author_display_name || post.author }}</strong></a>
                 @if (post.created_at) {
                   <time [attr.datetime]="post.created_at">{{
                     post.created_at | date: 'dd/MM/yyyy · HH:mm'
@@ -193,7 +193,7 @@
                   @for (comment of comments; track comment.id) {
                     <article class="comment">
                       <div class="comment-header">
-                        <strong>{{ comment.author_display_name || comment.author }}</strong>
+                        <a class="author-link" [routerLink]="comment.author_id ? ['/perfil', comment.author_id] : null"><strong>{{ comment.author_display_name || comment.author }}</strong></a>
                         @if (comment.created_at) {
                           <time [attr.datetime]="comment.created_at">{{
                             comment.created_at | date: 'dd/MM/yyyy'

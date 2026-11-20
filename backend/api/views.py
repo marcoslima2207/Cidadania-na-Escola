@@ -5,8 +5,9 @@ import unicodedata
 from pathlib import Path
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.storage import FileSystemStorage, default_storage
-from django.db.models import Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
 from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
@@ -37,6 +38,7 @@ from .serializers import (
     PostCommentSerializer,
     PostSerializer,
     ProfileSerializer,
+    PublicProfileSerializer,
     RegisterSerializer,
     ResultadoSerializer,
     UsuarioSerializer,
@@ -221,6 +223,9 @@ class PostViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(user=user) if scope == "minhas" else queryset.filter(saved_by_me=True)
             term = self.request.query_params.get("search", "").strip()
             category = self.request.query_params.get("category", "").strip()
+            author = self.request.query_params.get("author", "").strip()
+            if author:
+                queryset = queryset.filter(user_id=author) if author.isascii() and author.isdigit() and len(author) < 19 else queryset.none()
             if category:
                 queryset = queryset.filter(category=category)
             if term:
@@ -290,6 +295,13 @@ class PostViewSet(viewsets.ModelViewSet):
                 context={"request": request},
             ).data
         )
+
+
+class PublicProfileViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    queryset = get_user_model().objects.filter(is_active=True).select_related("profile").defer("profile__avatar_image").annotate(posts_count=Count("posts"))
+    serializer_class = PublicProfileSerializer
+    permission_classes = [AllowAny]
+    http_method_names = ["get", "head", "options"]
 
 
 class PostCommentViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):

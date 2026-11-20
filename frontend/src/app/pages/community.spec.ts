@@ -102,12 +102,13 @@ describe('Busca e comunidade', () => {
     }]);
     const post = component.posts[0];
     component.toggleComments(post);
-    const mine = { id: 2, author: 'Eu', content: 'Original', is_mine: true };
+    const mine = { id: 2, author: 'Eu', author_id: 12, content: 'Original', is_mine: true };
     const other = { id: 3, author: 'Outra pessoa', content: 'Comentário alheio', is_mine: false };
     http.expectOne(`${apiConfig.baseUrl}/posts/1/comments/`).flush([mine, other]);
     await fixture.whenStable();
     const articles = fixture.nativeElement.querySelectorAll('.comment');
     expect(articles[0].textContent).toContain('Editar');
+    expect(articles[0].querySelector('a').getAttribute('href')).toBe('/perfil/12');
     expect(articles[1].textContent).not.toContain('Editar');
     expect(articles[1].textContent).not.toContain('Excluir');
     component.editComment(other);

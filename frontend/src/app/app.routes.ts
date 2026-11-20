@@ -52,6 +52,10 @@ export const routes: Routes = [
       import('./pages/configuracoes/configuracoes.component').then((m) => m.ConfiguracoesComponent),
   },
   {
+    path: 'perfil/:id',
+    loadComponent: () => import('./pages/perfil-publico/perfil-publico.component').then((m) => m.PerfilPublicoComponent),
+  },
+  {
     path: 'perfil',
     loadComponent: () => import('./pages/perfil/perfil.component').then((m) => m.PerfilComponent),
   },
