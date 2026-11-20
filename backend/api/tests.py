@@ -12,7 +12,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Conteudo, Pergunta, Post, Profile, Resultado
+from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado
 
 User = get_user_model()
 
@@ -246,6 +246,41 @@ class ApiEndpointsTests(APITestCase):
 
         self.assertEqual(like_response.status_code, status.HTTP_200_OK)
         self.assertEqual(comment_response.status_code, status.HTTP_201_CREATED)
+
+    def test_comment_owner_can_edit_and_delete_without_changing_authorship(self):
+        other = User.objects.create_user(username='comentador')
+        post = Post.objects.create(user=other, title='Discussão', category='Cidadania', content='Texto')
+        self.client.force_authenticate(self.user)
+        created = self.client.post(reverse('post-comments', args=[post.id]), {'content': 'Original'}, format='json')
+        self.assertTrue(created.data['is_mine'])
+        url = reverse('comment-detail', args=[created.data['id']])
+        for invalid in ['', '   ', 'x' * 501]:
+            self.assertEqual(self.client.patch(url, {'content': invalid}, format='json').status_code, 400)
+        changed = self.client.patch(url, {'content': ' Corrigido ', 'post': 999, 'user': other.id}, format='json')
+        self.assertEqual(changed.status_code, 200)
+        comment = PostComment.objects.get(pk=created.data['id'])
+        self.assertEqual(comment.content, 'Corrigido')
+        self.assertEqual(comment.user_id, self.user.id)
+        self.assertEqual(comment.post_id, post.id)
+        self.assertEqual(self.client.delete(url).status_code, 204)
+        self.assertFalse(PostComment.objects.filter(pk=comment.pk).exists())
+        self.assertEqual(self.client.get(reverse('post-detail', args=[post.id])).data['comments_count'], 0)
+
+    def test_comment_mutations_require_its_owner_even_for_post_author(self):
+        other = User.objects.create_user(username='comentador')
+        post = Post.objects.create(user=self.user, title='Discussão', category='Cidadania', content='Texto')
+        comment = PostComment.objects.create(post=post, user=other, content='Original')
+        url = reverse('comment-detail', args=[comment.id])
+        self.assertEqual(self.client.patch(url, {'content': 'Alterado'}, format='json').status_code, 401)
+        self.assertEqual(self.client.delete(url).status_code, 401)
+        self.assertFalse(self.client.get(reverse('post-comments', args=[post.id])).data[0]['is_mine'])
+        self.client.force_authenticate(self.user)
+        self.assertEqual(self.client.patch(url, {'content': 'Alterado'}, format='json').status_code, 404)
+        self.assertEqual(self.client.delete(url).status_code, 404)
+        comment.refresh_from_db()
+        self.assertEqual(comment.content, 'Original')
+        self.client.force_authenticate(other)
+        self.assertTrue(self.client.get(reverse('post-comments', args=[post.id])).data[0]['is_mine'])
 
     # Confere se a API impede excluir o post de outra pessoa.
     def test_user_cannot_delete_another_users_post(self):

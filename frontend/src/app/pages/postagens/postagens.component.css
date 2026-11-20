@@ -211,7 +211,7 @@
   background: var(--ce-color-blue-soft);
   margin-bottom: var(--ce-space-3);
 }
-.comment > div {
+.comment-header {
   display: flex;
   justify-content: space-between;
   gap: var(--ce-space-3);
@@ -227,6 +227,22 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-size: var(--ce-font-size-small);
+}
+.comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.comment-edit {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.comment-edit textarea {
+  width: 100%;
+  resize: vertical;
 }
 .comment-form {
   display: flex;

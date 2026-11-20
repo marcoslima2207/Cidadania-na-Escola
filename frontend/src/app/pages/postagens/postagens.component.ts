@@ -34,6 +34,7 @@ interface Post {
 // Define o formato dos dados de Comment para conferir os tipos usados pela interface.
 interface Comment {
   id: number;
+  is_mine: boolean;
   author: string;
   author_display_name?: string;
   content: string;
@@ -62,6 +63,10 @@ export class PostagensComponent implements OnInit, OnDestroy {
   openPost: number | null = null;
   comments: Comment[] = [];
   commentText = '';
+  editingComment: { id: number; content: string } | null = null;
+  deletingComment: number | null = null;
+  commentError = '';
+  commentBusy = new Set<number>();
   loading = false;
   commentsLoading = false;
   error = '';
@@ -237,6 +242,9 @@ export class PostagensComponent implements OnInit, OnDestroy {
   }
   // Abre ou fecha os comentários e consulta a lista do post selecionado.
   toggleComments(post: Post): void {
+    this.editingComment = null;
+    this.deletingComment = null;
+    this.commentError = '';
     this.openPost = this.openPost === post.id ? null : post.id;
     this.comments = [];
     this.commentText = '';
@@ -284,6 +292,61 @@ export class PostagensComponent implements OnInit, OnDestroy {
         error: (e) => this.failed(post, e),
       });
   }
+  editComment(comment: Comment): void {
+    if (!comment.is_mine || this.commentBusy.has(comment.id)) return;
+    this.editingComment = { id: comment.id, content: comment.content };
+    this.deletingComment = null;
+    this.commentError = '';
+  }
+
+  saveComment(comment: Comment): void {
+    const draft = this.editingComment;
+    if (!comment.is_mine || draft?.id !== comment.id || !draft.content.trim() || this.commentBusy.has(comment.id)) return;
+    const postId = this.openPost;
+    this.commentBusy.add(comment.id);
+    this.http.patch<Comment>(`${this.api}/comments/${comment.id}/`,
+      { content: draft.content.trim() }, { headers: this.headers() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (updated) => {
+          this.commentBusy.delete(comment.id);
+          if (this.openPost === postId) {
+            this.comments = this.comments.map((item) => item.id === updated.id ? updated : item);
+            if (this.editingComment === draft) this.editingComment = null;
+            this.commentError = '';
+          }
+          this.changeDetector.markForCheck();
+        },
+        error: () => this.commentFailed(comment.id, postId),
+      });
+  }
+
+  deleteComment(post: Post, comment: Comment): void {
+    if (!comment.is_mine || this.deletingComment !== comment.id || this.commentBusy.has(comment.id)) return;
+    this.commentBusy.add(comment.id);
+    this.http.delete(`${this.api}/comments/${comment.id}/`, { headers: this.headers() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.commentBusy.delete(comment.id);
+          post.comments_count = Math.max(0, post.comments_count - 1);
+          if (this.openPost === post.id) {
+            this.comments = this.comments.filter((item) => item.id !== comment.id);
+            this.deletingComment = null;
+            this.commentError = '';
+          }
+          this.changeDetector.markForCheck();
+        },
+        error: () => this.commentFailed(comment.id, post.id),
+      });
+  }
+
+  private commentFailed(id: number, postId: number | null): void {
+    this.commentBusy.delete(id);
+    if (this.openPost === postId) this.commentError = 'Não foi possível alterar o comentário. Tente novamente.';
+    this.changeDetector.markForCheck();
+  }
+
   // Libera o bloqueio da ação e apresenta uma mensagem para sessão expirada ou outra falha.
   private failed(post: Post, e: { status: number }): void {
     this.busy.delete(post.id);

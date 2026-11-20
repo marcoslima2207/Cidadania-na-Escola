@@ -9,6 +9,7 @@ from .views import (
     MaterialEducativoViewSet,
     PerguntaViewSet,
     PostViewSet,
+    PostCommentViewSet,
     ResultadoViewSet,
     UsuarioViewSet,
 )
@@ -23,6 +24,7 @@ router.register(r"perguntas", PerguntaViewSet, basename="pergunta")
 router.register(r"resultados", ResultadoViewSet, basename="resultado")
 router.register(r"usuarios", UsuarioViewSet, basename="usuario")
 router.register(r"posts", PostViewSet, basename="post")
+router.register(r"comments", PostCommentViewSet, basename="comment")
 router.register(r"quiz/temas", TemaViewSet, basename="quiz-tema")
 router.register(r"quiz/nivel", NivelViewSet, basename="quiz-nivel")
 router.register(r"quiz/tentativas", TentativaViewSet, basename="quiz-tentativa")

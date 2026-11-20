@@ -8,7 +8,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage, default_storage
 from django.db.models import Exists, OuterRef
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -22,6 +22,7 @@ from .models import (
     MaterialEducativo,
     Pergunta,
     Post,
+    PostComment,
     PostLike,
     PostFavorite,
     Profile,
@@ -282,12 +283,22 @@ class PostViewSet(viewsets.ModelViewSet):
             serializer = PostCommentSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             comment = serializer.save(post=post, user=request.user)
-            return Response(PostCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+            return Response(PostCommentSerializer(comment, context={"request": request}).data, status=status.HTTP_201_CREATED)
         return Response(
             PostCommentSerializer(
-                post.comments.select_related("user").order_by("created_at"), many=True
+                post.comments.select_related("user").order_by("created_at"), many=True,
+                context={"request": request},
             ).data
         )
+
+
+class PostCommentViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    serializer_class = PostCommentSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch", "delete", "options"]
+
+    def get_queryset(self):
+        return PostComment.objects.filter(user=self.request.user).select_related("user")
 
 
 # CONTEÚDO EDUCATIVO.

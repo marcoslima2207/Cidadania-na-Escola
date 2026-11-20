@@ -347,14 +347,19 @@ class PostCommentSerializer(serializers.ModelSerializer):
     # A view define o autor a partir da sessão e o post a partir da URL.
     author = serializers.CharField(source="user.username", read_only=True)
     author_display_name = serializers.SerializerMethodField()
+    is_mine = serializers.SerializerMethodField()
 
     class Meta:
         model = PostComment
-        fields = ["id", "post", "content", "author", "author_display_name", "created_at"]
+        fields = ["id", "post", "content", "author", "author_display_name", "created_at", "is_mine"]
         read_only_fields = ["post"]
 
     def get_author_display_name(self, obj):
         return user_display_name(obj.user)
+
+    def get_is_mine(self, obj):
+        request = self.context.get("request")
+        return bool(request and request.user.is_authenticated and obj.user_id == request.user.id)
 
 
 # CONTEÚDO EDUCATIVO.

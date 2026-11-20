@@ -90,6 +90,52 @@ describe('Busca e comunidade', () => {
     expect(post.likes_count).toBe(1);
   });
 
+  it('edita e exclui apenas comentários próprios e preserva o rascunho quando falha', async () => {
+    localStorage.setItem('cidadania_token', 'token-teste');
+    const fixture = TestBed.createComponent(PostagensComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    http.expectOne(`${apiConfig.baseUrl}/posts/`).flush([{
+      id: 1, author: 'Outro', title: 'Conversa', content: 'Texto', category: 'Cidadania',
+      media_type: 'image', media_url: '', likes_count: 0, comments_count: 2,
+      liked_by_me: false, is_mine: false,
+    }]);
+    const post = component.posts[0];
+    component.toggleComments(post);
+    const mine = { id: 2, author: 'Eu', content: 'Original', is_mine: true };
+    const other = { id: 3, author: 'Outra pessoa', content: 'Comentário alheio', is_mine: false };
+    http.expectOne(`${apiConfig.baseUrl}/posts/1/comments/`).flush([mine, other]);
+    await fixture.whenStable();
+    const articles = fixture.nativeElement.querySelectorAll('.comment');
+    expect(articles[0].textContent).toContain('Editar');
+    expect(articles[1].textContent).not.toContain('Editar');
+    expect(articles[1].textContent).not.toContain('Excluir');
+    component.editComment(other);
+    expect(component.editingComment).toBeNull();
+    component.editComment(mine);
+    component.editingComment!.content = 'Corrigido';
+    component.saveComment(mine);
+    component.saveComment(mine);
+    const failed = http.expectOne(`${apiConfig.baseUrl}/comments/2/`);
+    expect(failed.request.method).toBe('PATCH');
+    failed.flush({}, { status: 503, statusText: 'Unavailable' });
+    expect(component.editingComment!.content).toBe('Corrigido');
+    component.saveComment(mine);
+    http.expectOne(`${apiConfig.baseUrl}/comments/2/`).flush({ ...mine, content: 'Corrigido' });
+    expect(component.comments[0].content).toBe('Corrigido');
+    expect(component.editingComment).toBeNull();
+    component.deleteComment(post, mine);
+    http.expectNone(`${apiConfig.baseUrl}/comments/2/`);
+    component.deletingComment = 2;
+    component.deleteComment(post, mine);
+    component.deleteComment(post, mine);
+    const deletion = http.expectOne(`${apiConfig.baseUrl}/comments/2/`);
+    expect(deletion.request.method).toBe('DELETE');
+    deletion.flush(null);
+    expect(component.comments).toEqual([other]);
+    expect(post.comments_count).toBe(1);
+  });
+
   it('publica o arquivo por multipart sem URL externa', () => {
     localStorage.setItem('cidadania_token', 'token-teste');
     const component = TestBed.createComponent(PublicarComponent).componentInstance;

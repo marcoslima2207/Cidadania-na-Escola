@@ -192,7 +192,7 @@
                 } @else {
                   @for (comment of comments; track comment.id) {
                     <article class="comment">
-                      <div>
+                      <div class="comment-header">
                         <strong>{{ comment.author_display_name || comment.author }}</strong>
                         @if (comment.created_at) {
                           <time [attr.datetime]="comment.created_at">{{
@@ -200,7 +200,30 @@
                           }}</time>
                         }
                       </div>
-                      <p>{{ comment.content }}</p>
+                      @if (editingComment; as draft) {
+                        @if (draft.id === comment.id) {
+                          <form class="comment-edit" (submit)="$event.preventDefault(); saveComment(comment)">
+                            <label [attr.for]="'edit-comment-' + comment.id">Editar comentário</label>
+                            <textarea class="ce-input" [id]="'edit-comment-' + comment.id" name="editComment" maxlength="500" rows="3" [(ngModel)]="draft.content" [disabled]="commentBusy.has(comment.id)"></textarea>
+                            <div class="comment-actions">
+                              <button class="action-button" type="submit" [disabled]="commentBusy.has(comment.id) || !draft.content.trim()">Salvar</button>
+                              <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="editingComment = null">Cancelar</button>
+                            </div>
+                          </form>
+                        } @else { <p>{{ comment.content }}</p> }
+                      } @else { <p>{{ comment.content }}</p> }
+                      @if (loggedIn && comment.is_mine && editingComment?.id !== comment.id) {
+                        <div class="comment-actions">
+                          @if (deletingComment === comment.id) {
+                            <span>Excluir este comentário?</span>
+                            <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="deleteComment(post, comment)">Confirmar exclusão</button>
+                            <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="deletingComment = null">Cancelar</button>
+                          } @else {
+                            <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="editComment(comment)">Editar</button>
+                            <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="deletingComment = comment.id; commentError = ''">Excluir</button>
+                          }
+                        </div>
+                      }
                     </article>
                   } @empty {
                     <p class="comments-empty">
@@ -208,6 +231,7 @@
                     </p>
                   }
                 }
+                @if (commentError) { <p role="alert">{{ commentError }}</p> }
                 @if (loggedIn) {
                   <form class="comment-form" (submit)="$event.preventDefault(); comment(post)">
                     <label class="ce-sr-only" [attr.for]="'comment-text-' + post.id"
