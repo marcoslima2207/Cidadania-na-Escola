@@ -12,7 +12,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado
+from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 
 User = get_user_model()
 
@@ -47,6 +47,9 @@ class ApiEndpointsTests(APITestCase):
             username='aluno',
             email='aluno@email.com',
             password='12345678'
+        )
+        self.admin = User.objects.create_superuser(
+            username='responsavel', email='responsavel@escola.com', password='12345678'
         )
 
     def avatar_upload(self, name="foto.jpg"):
@@ -127,8 +130,8 @@ class ApiEndpointsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
 
-    # Confere o cadastro de um conteúdo e a inclusão de um registro no banco.
-    def test_create_conteudo(self):
+    # Confere que só uma conta administrativa pode alterar a biblioteca pública.
+    def test_legacy_content_writes_require_an_administrator(self):
         payload = {
             'titulo': 'Direitos trabalhistas',
             'descricao': 'Direitos básicos do trabalhador',
@@ -136,27 +139,31 @@ class ApiEndpointsTests(APITestCase):
             'conteudo': 'Trabalho digno e respeito às leis trabalhistas.'
         }
         response = self.client.post(reverse('conteudo-list'), payload, format='json')
+        self.assertIn(response.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+        self.client.force_authenticate(self.user)
+        response = self.client.post(reverse('conteudo-list'), payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(reverse('conteudo-list'), payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Conteudo.objects.count(), 2)
 
-    # Confere se a API retorna as perguntas cadastradas.
-    def test_list_perguntas(self):
+    # Impede a exposição das respostas corretas e dos dados pessoais dos endpoints legados.
+    def test_legacy_questions_results_and_users_are_administrator_only(self):
+        resultado = Resultado.objects.create(nome='Aluno', pontuacao=8, total_perguntas=10)
+        usuario = Usuario.objects.create(nome='Pessoa', email='pessoa@exemplo.com')
+        for name, pk in [('pergunta', self.pergunta.id), ('resultado', resultado.id), ('usuario', usuario.id)]:
+            self.assertIn(self.client.get(reverse(f'{name}-list')).status_code, (401, 403))
+            self.assertIn(self.client.get(reverse(f'{name}-detail', args=[pk])).status_code, (401, 403))
+        self.client.force_authenticate(self.user)
+        for name in ('pergunta', 'resultado', 'usuario'):
+            self.assertEqual(self.client.get(reverse(f'{name}-list')).status_code, status.HTTP_403_FORBIDDEN)
+        self.client.force_authenticate(self.admin)
         response = self.client.get(reverse('pergunta-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreater(len(response.data), 0)
-
-    # Confere o registro de pontuação e respostas de uma tentativa do quiz.
-    def test_create_resultado(self):
-        payload = {
-            'nome': 'Aluno',
-            'pontuacao': 8,
-            'total_perguntas': 10,
-            'resultado': 'Bom nível de compreensão',
-            'respostas': {'1': 'a', '2': 'b'}
-        }
-        response = self.client.post(reverse('resultado-list'), payload, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Resultado.objects.count(), 1)
+        self.assertEqual(self.client.get(reverse('resultado-list')).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.get(reverse('usuario-list')).status_code, status.HTTP_200_OK)
 
     # Confere se credenciais válidas devolvem um token de acesso.
     def test_login_returns_token(self):

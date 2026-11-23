@@ -13,7 +13,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from .google_auth import GoogleCredentialSerializer, google_config
@@ -330,21 +330,34 @@ class MaterialEducativoViewSet(viewsets.ReadOnlyModelViewSet):
 class ConteudoViewSet(viewsets.ModelViewSet):
     queryset = Conteudo.objects.all().order_by("-data_publicacao")
     serializer_class = ConteudoSerializer
+    permission_classes = [AllowAny]
+
+    # A biblioteca continua pública, mas só uma conta administrativa pode alterar conteúdos.
+    def get_permissions(self):
+        if self.request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            return [IsAdminUser()]
+        return [AllowAny()]
 
 
 # QUIZ: banco de perguntas.
 class PerguntaViewSet(viewsets.ModelViewSet):
     queryset = Pergunta.objects.filter(nivel__isnull=True).order_by("id")
     serializer_class = PerguntaSerializer
+    # Esta rota legada expõe a alternativa correta e é reservada à administração.
+    permission_classes = [IsAdminUser]
 
 
 # QUIZ: resultados enviados pelo frontend.
 class ResultadoViewSet(viewsets.ModelViewSet):
     queryset = Resultado.objects.all().order_by("-criado_em")
     serializer_class = ResultadoSerializer
+    # O quiz atual usa TentativaQuiz, que guarda dados por usuário; registros legados ficam privados.
+    permission_classes = [IsAdminUser]
 
 
 # LEGADO/USUÁRIOS.
 class UsuarioViewSet(viewsets.ModelViewSet):
     queryset = Usuario.objects.all().order_by("id")
     serializer_class = UsuarioSerializer
+    # A tabela legada contém e-mails e não pode ser listada publicamente.
+    permission_classes = [IsAdminUser]
