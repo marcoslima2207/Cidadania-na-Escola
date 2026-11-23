@@ -43,6 +43,8 @@ interface Comment {
   created_at?: string;
 }
 
+type ReportTarget = 'post' | 'comment';
+
 // POSTAGENS: feed publico com curtidas, comentarios e exclusao do proprio autor.
 @Component({
   selector: 'app-postagens',
@@ -69,6 +71,9 @@ export class PostagensComponent implements OnInit, OnDestroy {
   deletingComment: number | null = null;
   commentError = '';
   commentBusy = new Set<number>();
+  reporting: { type: ReportTarget; id: number; reason: string; details: string } | null = null;
+  reportBusy = false;
+  reportMessage = '';
   loading = false;
   commentsLoading = false;
   error = '';
@@ -341,6 +346,37 @@ export class PostagensComponent implements OnInit, OnDestroy {
         },
         error: () => this.commentFailed(comment.id, post.id),
       });
+  }
+
+  startReport(type: ReportTarget, id: number): void {
+    if (!this.loggedIn || this.reportBusy) return;
+    this.reporting = { type, id, reason: 'spam', details: '' };
+    this.reportMessage = '';
+  }
+
+  submitReport(): void {
+    const report = this.reporting;
+    if (!report || this.reportBusy) return;
+    this.reportBusy = true;
+    const route = report.type === 'post' ? 'posts' : 'comments';
+    this.http.post<{ reported: boolean }>(`${this.api}/${route}/${report.id}/report/`, {
+      reason: report.reason,
+      details: report.details.trim(),
+    }, { headers: this.headers() }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.reportBusy = false;
+        this.reporting = null;
+        this.reportMessage = 'Denúncia enviada para análise.';
+        this.changeDetector.markForCheck();
+      },
+      error: response => {
+        this.reportBusy = false;
+        this.reportMessage = response.status === 429
+          ? 'Você atingiu o limite de denúncias. Tente novamente mais tarde.'
+          : 'Não foi possível enviar a denúncia. Tente novamente.';
+        this.changeDetector.markForCheck();
+      },
+    });
   }
 
   private commentFailed(id: number, postId: number | null): void {

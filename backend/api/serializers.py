@@ -10,7 +10,7 @@ from django.db import transaction
 from django.urls import reverse
 from rest_framework import serializers
 
-from .models import Conteudo, GoogleIdentity, MaterialEducativo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
+from .models import CommunityReport, Conteudo, GoogleIdentity, MaterialEducativo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 from .user_display import user_display_name
 
 User = get_user_model()
@@ -390,6 +390,12 @@ class PostCommentSerializer(serializers.ModelSerializer):
     def get_is_mine(self, obj):
         request = self.context.get("request")
         return bool(request and request.user.is_authenticated and obj.user_id == request.user.id)
+
+
+class CommunityReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommunityReport
+        fields = ["reason", "details"]
 
 
 # CONTEÚDO EDUCATIVO.

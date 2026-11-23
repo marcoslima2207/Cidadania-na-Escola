@@ -177,6 +177,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_THROTTLE_RATES': {
+        'post_create': '20/hour',
+        'comment_create': '30/hour',
+        'report_create': '10/hour',
+    },
 }
 
 # Origens do frontend autorizadas a fazer chamadas à API pelo navegador.

@@ -180,7 +180,22 @@
                 <app-icon name="comment" /><strong>{{ post.comments_count }}</strong
                 ><span>Comentários</span>
               </button>
+              @if (loggedIn && !isMine(post)) {
+                <button class="action-button" type="button" (click)="startReport('post', post.id)">Denunciar</button>
+              }
             </div>
+            @if (reporting?.type === 'post' && reporting?.id === post.id) {
+              <form class="report-form" (submit)="$event.preventDefault(); submitReport()">
+                <label [for]="'report-post-' + post.id">Motivo da denúncia</label>
+                <select class="ce-input" [id]="'report-post-' + post.id" name="reportReason" [(ngModel)]="reporting!.reason" [disabled]="reportBusy">
+                  <option value="spam">Spam ou propaganda</option><option value="abuse">Assédio, discriminação ou discurso de ódio</option><option value="misinformation">Informação prejudicial ou enganosa</option><option value="other">Outro motivo</option>
+                </select>
+                <label [for]="'report-details-post-' + post.id">Detalhes opcionais</label>
+                <textarea class="ce-input" [id]="'report-details-post-' + post.id" name="reportDetails" maxlength="500" rows="3" [(ngModel)]="reporting!.details" [disabled]="reportBusy"></textarea>
+                <div class="comment-actions"><button class="ce-button" type="submit" [disabled]="reportBusy">{{ reportBusy ? 'Enviando…' : 'Enviar denúncia' }}</button><button class="ce-button ce-button--secondary" type="button" [disabled]="reportBusy" (click)="reporting = null">Cancelar</button></div>
+              </form>
+            }
+            @if (reportMessage) { <p class="report-message" role="status">{{ reportMessage }}</p> }
             @if (openPost === post.id) {
               <section
                 class="comments"
@@ -223,6 +238,18 @@
                             <button class="action-button" type="button" [disabled]="commentBusy.has(comment.id)" (click)="deletingComment = comment.id; commentError = ''">Excluir</button>
                           }
                         </div>
+                      }
+                      @if (loggedIn && !comment.is_mine) {
+                        <div class="comment-actions"><button class="action-button" type="button" (click)="startReport('comment', comment.id)">Denunciar</button></div>
+                      }
+                      @if (reporting?.type === 'comment' && reporting?.id === comment.id) {
+                        <form class="report-form" (submit)="$event.preventDefault(); submitReport()">
+                          <label [attr.for]="'report-comment-' + comment.id">Motivo da denúncia</label>
+                          <select class="ce-input" [id]="'report-comment-' + comment.id" name="reportReason" [(ngModel)]="reporting!.reason" [disabled]="reportBusy"><option value="spam">Spam ou propaganda</option><option value="abuse">Assédio, discriminação ou discurso de ódio</option><option value="misinformation">Informação prejudicial ou enganosa</option><option value="other">Outro motivo</option></select>
+                          <label [attr.for]="'report-details-comment-' + comment.id">Detalhes opcionais</label>
+                          <textarea class="ce-input" [id]="'report-details-comment-' + comment.id" name="reportDetails" maxlength="500" rows="3" [(ngModel)]="reporting!.details" [disabled]="reportBusy"></textarea>
+                          <div class="comment-actions"><button class="action-button" type="submit" [disabled]="reportBusy">Enviar denúncia</button><button class="action-button" type="button" [disabled]="reportBusy" (click)="reporting = null">Cancelar</button></div>
+                        </form>
                       }
                     </article>
                   } @empty {

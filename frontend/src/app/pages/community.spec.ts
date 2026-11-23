@@ -137,6 +137,30 @@ describe('Busca e comunidade', () => {
     expect(post.comments_count).toBe(1);
   });
 
+  it('envia denúncia de outro autor e mostra a confirmação', async () => {
+    localStorage.setItem('cidadania_token', 'token-teste');
+    const fixture = TestBed.createComponent(PostagensComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+    http.expectOne(`${apiConfig.baseUrl}/posts/`).flush([{
+      id: 8, author: 'Outro', title: 'Conversa', content: 'Texto', category: 'Cidadania',
+      media_type: 'image', media_url: '', likes_count: 0, comments_count: 0,
+      liked_by_me: false, is_mine: false,
+    }]);
+    const post = component.posts[0];
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('#post-8').textContent).toContain('Denunciar');
+    component.startReport('post', post.id);
+    component.reporting!.reason = 'misinformation';
+    component.reporting!.details = 'Conteúdo enganoso';
+    component.submitReport();
+    const request = http.expectOne(`${apiConfig.baseUrl}/posts/8/report/`);
+    expect(request.request.body).toEqual({ reason: 'misinformation', details: 'Conteúdo enganoso' });
+    request.flush({ reported: true });
+    expect(component.reporting).toBeNull();
+    expect(component.reportMessage).toContain('enviada');
+  });
+
   it('publica o arquivo por multipart sem URL externa', () => {
     localStorage.setItem('cidadania_token', 'token-teste');
     const component = TestBed.createComponent(PublicarComponent).componentInstance;

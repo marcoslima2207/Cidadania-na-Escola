@@ -1,5 +1,6 @@
 # Verifica os contratos da API usando banco e pasta de mídia temporários, sem alterar os dados reais.
 from django.contrib.auth import get_user_model
+from django.conf import settings
 import base64
 import tempfile
 from unittest.mock import patch
@@ -12,7 +13,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
+from .models import CommunityReport, Conteudo, Pergunta, Post, PostComment, Profile, Resultado, Usuario
 
 User = get_user_model()
 
@@ -376,6 +377,29 @@ class ApiEndpointsTests(APITestCase):
         response = self.client.post(reverse('post-like', args=[post.id]))
         self.assertFalse(response.data['liked'])
         self.assertEqual(response.data['likes_count'], 0)
+
+    def test_authenticated_users_can_report_other_community_content_once(self):
+        other = User.objects.create_user(username='autor')
+        post = Post.objects.create(user=other, title='Discussão', category='Cidadania', content='Texto')
+        comment = PostComment.objects.create(user=other, post=post, content='Comentário')
+        payload = {'reason': 'spam', 'details': 'Propaganda repetida'}
+        self.assertEqual(self.client.post(reverse('post-report', args=[post.id]), payload, format='json').status_code, 401)
+        self.client.force_authenticate(self.user)
+        response = self.client.post(reverse('post-report', args=[post.id]), payload, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(self.client.post(reverse('post-report', args=[post.id]), payload, format='json').status_code, 200)
+        response = self.client.post(reverse('comment-report', args=[comment.id]), {'reason': 'abuse'}, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(CommunityReport.objects.count(), 2)
+        self.client.force_authenticate(other)
+        self.assertEqual(self.client.post(reverse('post-report', args=[post.id]), payload, format='json').status_code, 403)
+        self.assertEqual(self.client.post(reverse('comment-report', args=[comment.id]), payload, format='json').status_code, 403)
+
+    def test_community_spam_limits_are_configured(self):
+        rates = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']
+        self.assertEqual(rates['post_create'], '20/hour')
+        self.assertEqual(rates['comment_create'], '30/hour')
+        self.assertEqual(rates['report_create'], '10/hour')
 
     # Confere a rejeição de arquivo vazio, formato proibido, assinatura falsa e tamanho excessivo.
     def test_upload_validation(self):

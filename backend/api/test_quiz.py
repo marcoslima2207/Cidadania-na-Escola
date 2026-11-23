@@ -65,13 +65,9 @@ class QuizTests(APITestCase):
         )
         self.assertNotIn("alternativa_correta", response.data[0])
         self.assertNotIn("explicacao", response.data[0])
+        # A rota legada contém respostas corretas e agora é reservada à administração.
         legacy = self.client.get(reverse("pergunta-list"))
-        self.assertFalse(
-            any(
-                q["id"] in self.level.perguntas.values_list("id", flat=True)
-                for q in legacy.data
-            )
-        )
+        self.assertEqual(legacy.status_code, 403)
 
     def test_progress_requires_authentication(self):
         self.client.force_authenticate(None)

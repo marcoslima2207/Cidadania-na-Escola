@@ -1,6 +1,7 @@
 # Define as tabelas do projeto, seus campos e os relacionamentos entre usuários, posts e quiz.
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -121,6 +122,32 @@ class PostComment(models.Model):
     # Limite usado também pelo campo de comentário da interface.
     content = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class CommunityReport(models.Model):
+    REASONS = [
+        ("spam", "Spam ou propaganda"),
+        ("abuse", "Assédio, discriminação ou discurso de ódio"),
+        ("misinformation", "Informação prejudicial ou enganosa"),
+        ("other", "Outro motivo"),
+    ]
+    reporter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="community_reports")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, null=True, blank=True, related_name="reports")
+    comment = models.ForeignKey(PostComment, on_delete=models.CASCADE, null=True, blank=True, related_name="reports")
+    reason = models.CharField(max_length=20, choices=REASONS)
+    details = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(Q(post__isnull=False, comment__isnull=True) | Q(post__isnull=True, comment__isnull=False)),
+                name="community_report_one_target",
+            ),
+            models.UniqueConstraint(fields=["reporter", "post"], condition=Q(post__isnull=False), name="unique_post_reporter"),
+            models.UniqueConstraint(fields=["reporter", "comment"], condition=Q(comment__isnull=False), name="unique_comment_reporter"),
+        ]
 
 
 # CONTEÚDO EDUCATIVO: materiais organizados por tema.

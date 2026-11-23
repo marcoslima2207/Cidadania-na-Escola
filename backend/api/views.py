@@ -10,6 +10,7 @@ from django.core.files.storage import FileSystemStorage, default_storage
 from django.db.models import Count, Exists, OuterRef
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
 from rest_framework import mixins, status, viewsets
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
@@ -20,6 +21,7 @@ from .google_auth import GoogleCredentialSerializer, google_config
 from .user_display import user_display_name
 from .models import (
     Conteudo,
+    CommunityReport,
     MaterialEducativo,
     Pergunta,
     Post,
@@ -32,6 +34,7 @@ from .models import (
 )
 from .serializers import (
     ConteudoSerializer,
+    CommunityReportSerializer,
     MaterialEducativoSerializer,
     LoginSerializer,
     PerguntaSerializer,
@@ -199,9 +202,22 @@ class PostViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == "comments" and self.request.method == "GET":
             return [AllowAny()]
-        if self.action in ["create", "update", "partial_update", "destroy", "like", "favorite", "comments"]:
+        if self.action in ["create", "update", "partial_update", "destroy", "like", "favorite", "comments", "report"]:
             return [IsAuthenticated()]
         return [AllowAny()]
+
+    def get_throttles(self):
+        scopes = {
+            "create": "post_create",
+            "report": "report_create",
+        }
+        scope = scopes.get(self.action)
+        if self.action == "comments" and self.request.method == "POST":
+            scope = "comment_create"
+        if scope:
+            self.throttle_scope = scope
+            return [ScopedRateThrottle()]
+        return super().get_throttles()
 
     # Associa o novo post ao usuário da requisição, sem aceitar um autor fornecido pelo cliente.
     def perform_create(self, serializer):
@@ -280,6 +296,18 @@ class PostViewSet(viewsets.ModelViewSet):
             PostFavorite.objects.filter(post=post, user=request.user).delete()
         return Response({"saved_by_me": request.method == "PUT"})
 
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def report(self, request, pk=None):
+        post = self.get_object()
+        if post.user_id == request.user.id:
+            raise PermissionDenied("Você não pode denunciar a própria publicação.")
+        serializer = CommunityReportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report, created = CommunityReport.objects.get_or_create(
+            reporter=request.user, post=post, defaults=serializer.validated_data
+        )
+        return Response({"reported": True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
     @action(detail=True, methods=["get", "post"], permission_classes=[IsAuthenticated])
     # Lista os comentários do post ou cria um comentário associado ao autor da requisição.
     def comments(self, request, pk=None):
@@ -307,10 +335,30 @@ class PublicProfileViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 class PostCommentViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     serializer_class = PostCommentSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ["patch", "delete", "options"]
+    http_method_names = ["patch", "delete", "post", "options"]
 
     def get_queryset(self):
+        if self.action == "report":
+            return PostComment.objects.select_related("user")
         return PostComment.objects.filter(user=self.request.user).select_related("user")
+
+    def get_throttles(self):
+        if self.action == "report":
+            self.throttle_scope = "report_create"
+            return [ScopedRateThrottle()]
+        return super().get_throttles()
+
+    @action(detail=True, methods=["post"])
+    def report(self, request, pk=None):
+        comment = self.get_object()
+        if comment.user_id == request.user.id:
+            raise PermissionDenied("Você não pode denunciar o próprio comentário.")
+        serializer = CommunityReportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        report, created = CommunityReport.objects.get_or_create(
+            reporter=request.user, comment=comment, defaults=serializer.validated_data
+        )
+        return Response({"reported": True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 # CONTEÚDO EDUCATIVO.
